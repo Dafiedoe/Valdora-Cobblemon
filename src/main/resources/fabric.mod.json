@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "valdora",
+	"version": "${version}",
+	"name": "Valdora",
+	"description": "This is the official mod for Valdora Cobblemon",
+	"authors": [
+		"Dafiedoe"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/valdora/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.dafiedoe.valdora.Valdora"
+		],
+		"fabric-datagen": [
+			"net.dafiedoe.valdora.ValdoraDataGenerator"
+		],
+		"client": [
+			"net.dafiedoe.valdora.ValdoraClient"
+		]
+	},
+	"mixins": [
+		"valdora.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"custom": {
+		"modmenu:parent": "cobblemon"
+	}
+}
