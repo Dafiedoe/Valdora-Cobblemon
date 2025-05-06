@@ -1,7 +1,7 @@
-package net.dafiedoe.valdora.events;
+package net.valdora.events;
 
-import net.dafiedoe.valdora.spawning.BiomeSpawnSettings;
-import net.dafiedoe.valdora.spawning.SpawnPoolManager;
+import net.valdora.spawning.BiomeSpawnSettings;
+import net.valdora.spawning.SpawnPoolManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.registry.Registries;
@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static net.dafiedoe.valdora.utils.PokemonUtils.isPlayerInBattle;
-import static net.dafiedoe.valdora.utils.PokemonUtils.startWildBattle;
+import static net.valdora.utils.PokemonUtils.isPlayerInBattle;
+import static net.valdora.utils.PokemonUtils.startWildBattle;
 
 public class TallGrassWalkEvent {
     private static final Map<ServerPlayerEntity, Integer> ticksInSpawnRegion = new HashMap<>();

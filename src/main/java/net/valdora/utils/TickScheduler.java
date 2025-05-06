@@ -1,4 +1,4 @@
-package net.dafiedoe.valdora.utils;
+package net.valdora.utils;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;

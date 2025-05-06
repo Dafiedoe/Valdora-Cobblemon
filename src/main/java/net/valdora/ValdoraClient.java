@@ -1,4 +1,4 @@
-package net.dafiedoe.valdora;
+package net.valdora;
 
 import net.fabricmc.api.ClientModInitializer;
 

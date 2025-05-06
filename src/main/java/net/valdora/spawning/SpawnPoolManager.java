@@ -1,8 +1,8 @@
-package net.dafiedoe.valdora.spawning;
+package net.valdora.spawning;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import net.dafiedoe.valdora.Valdora;
+import net.valdora.Valdora;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;

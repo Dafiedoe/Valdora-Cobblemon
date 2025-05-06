@@ -1,4 +1,4 @@
-package net.dafiedoe.valdora.spawning;
+package net.valdora.spawning;
 
 public class SpawnEntry {
     public String pokemon;

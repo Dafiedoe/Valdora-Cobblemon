@@ -16,13 +16,13 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.dafiedoe.valdora.Valdora"
+			"net.valdora.Valdora"
 		],
 		"fabric-datagen": [
-			"net.dafiedoe.valdora.ValdoraDataGenerator"
+			"net.valdora.ValdoraDataGenerator"
 		],
 		"client": [
-			"net.dafiedoe.valdora.ValdoraClient"
+			"net.valdora.ValdoraClient"
 		]
 	},
 	"mixins": [

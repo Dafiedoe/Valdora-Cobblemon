@@ -1,4 +1,4 @@
-package net.dafiedoe.valdora.mixin;
+package net.valdora.mixin;
 
 import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;

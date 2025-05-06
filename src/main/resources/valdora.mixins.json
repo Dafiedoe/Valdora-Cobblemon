@@ -1,6 +1,6 @@
 {
 	"required": true,
-	"package": "net.dafiedoe.valdora.mixin",
+	"package": "net.valdora.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"ExampleMixin"

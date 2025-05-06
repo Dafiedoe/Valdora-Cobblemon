@@ -1,9 +1,9 @@
-package net.dafiedoe.valdora.commands;
+package net.valdora.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import net.dafiedoe.valdora.spawning.SpawnEntry;
-import net.dafiedoe.valdora.spawning.SpawnPoolManager;
+import net.valdora.spawning.SpawnEntry;
+import net.valdora.spawning.SpawnPoolManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;

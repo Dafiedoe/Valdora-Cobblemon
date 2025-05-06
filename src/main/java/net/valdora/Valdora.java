@@ -1,14 +1,14 @@
-package net.dafiedoe.valdora;
+package net.valdora;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import net.dafiedoe.valdora.spawning.SpawnPoolManager;
-import net.dafiedoe.valdora.commands.DebugValidSpawnsCommand;
-import net.dafiedoe.valdora.commands.ReloadConfigCommand;
-import net.dafiedoe.valdora.commands.ReloadSpawnPoolsCommand;
-import net.dafiedoe.valdora.events.DeletePokemonAfterBattleEvent;
-import net.dafiedoe.valdora.events.TallGrassWalkEvent;
+import net.valdora.spawning.SpawnPoolManager;
+import net.valdora.commands.DebugValidSpawnsCommand;
+import net.valdora.commands.ReloadConfigCommand;
+import net.valdora.commands.ReloadSpawnPoolsCommand;
+import net.valdora.events.DeletePokemonAfterBattleEvent;
+import net.valdora.events.TallGrassWalkEvent;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;

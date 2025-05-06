@@ -1,12 +1,12 @@
-package net.dafiedoe.valdora.utils;
+package net.valdora.utils;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.battles.BattleBuilder;
 import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
-import net.dafiedoe.valdora.spawning.SpawnEntry;
-import net.dafiedoe.valdora.spawning.SpawnPoolManager;
-import net.dafiedoe.valdora.Valdora;
+import net.valdora.spawning.SpawnEntry;
+import net.valdora.spawning.SpawnPoolManager;
+import net.valdora.Valdora;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
