@@ -1,4 +1,4 @@
-package net.valdora.events;
+package net.valdora.spawning.events;
 
 import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
@@ -8,7 +8,6 @@ import com.cobblemon.mod.common.api.events.battles.BattleFledEvent;
 import com.cobblemon.mod.common.battles.BattleSide;
 import com.cobblemon.mod.common.battles.actor.PokemonBattleActor;
 import kotlin.Unit;
-import net.valdora.Valdora;
 import net.minecraft.entity.Entity;
 
 public class DeletePokemonAfterBattleEvent {

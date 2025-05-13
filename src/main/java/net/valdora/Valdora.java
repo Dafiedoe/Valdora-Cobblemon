@@ -14,12 +14,13 @@ import net.minecraft.util.Identifier;
 import net.valdora.npc.ModNPC;
 import net.valdora.npc.commands.SpawnNPCCommand;
 import net.valdora.npc.custom.StaticNPC;
+import net.valdora.spawning.ModSpawning;
 import net.valdora.spawning.SpawnPoolManager;
-import net.valdora.commands.DebugValidSpawnsCommand;
-import net.valdora.commands.ReloadConfigCommand;
-import net.valdora.commands.ReloadSpawnPoolsCommand;
-import net.valdora.events.DeletePokemonAfterBattleEvent;
-import net.valdora.events.TallGrassWalkEvent;
+import net.valdora.spawning.commands.DebugValidSpawnsCommand;
+import net.valdora.spawning.commands.ReloadConfigCommand;
+import net.valdora.spawning.commands.ReloadSpawnPoolsCommand;
+import net.valdora.spawning.events.DeletePokemonAfterBattleEvent;
+import net.valdora.spawning.events.TallGrassWalkEvent;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -38,17 +39,7 @@ public class Valdora implements ModInitializer {
 	public void onInitialize() {
 		loadConfig();
 
-		TallGrassWalkEvent.register();
-		DeletePokemonAfterBattleEvent.register();
-
-		SpawnPoolManager.load();
-
-		CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-			ReloadConfigCommand.register(dispatcher);
-			ReloadSpawnPoolsCommand.register(dispatcher);
-			DebugValidSpawnsCommand.register(dispatcher);
-			SpawnNPCCommand.register(dispatcher);
-		}));
+		ModSpawning.registerSpawning();
 
 		ModNPC.registerEntities();
 	}

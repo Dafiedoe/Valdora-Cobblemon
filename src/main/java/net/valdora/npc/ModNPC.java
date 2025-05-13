@@ -1,5 +1,6 @@
 package net.valdora.npc;
 
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -10,7 +11,11 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.valdora.Valdora;
+import net.valdora.npc.commands.SpawnNPCCommand;
 import net.valdora.npc.custom.StaticNPC;
+import net.valdora.spawning.commands.DebugValidSpawnsCommand;
+import net.valdora.spawning.commands.ReloadConfigCommand;
+import net.valdora.spawning.commands.ReloadSpawnPoolsCommand;
 
 public class ModNPC {
     public static EntityType<StaticNPC> STATIC_NPC;
@@ -30,5 +35,9 @@ public class ModNPC {
         );
 
         Valdora.LOGGER.info("Registered Static NPC");
+
+        CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
+            SpawnNPCCommand.register(dispatcher);
+        }));
     }
 }

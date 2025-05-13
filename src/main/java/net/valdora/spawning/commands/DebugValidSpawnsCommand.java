@@ -1,4 +1,4 @@
-package net.valdora.commands;
+package net.valdora.spawning.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;

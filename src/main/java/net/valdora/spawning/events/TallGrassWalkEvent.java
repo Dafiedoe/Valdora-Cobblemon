@@ -1,4 +1,4 @@
-package net.valdora.events;
+package net.valdora.spawning.events;
 
 import net.valdora.spawning.BiomeSpawnSettings;
 import net.valdora.spawning.SpawnPoolManager;

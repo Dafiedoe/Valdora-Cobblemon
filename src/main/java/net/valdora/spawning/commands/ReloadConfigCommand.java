@@ -1,18 +1,18 @@
-package net.valdora.commands;
+package net.valdora.spawning.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import net.valdora.spawning.SpawnPoolManager;
+import net.valdora.Valdora;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
-public class ReloadSpawnPoolsCommand {
+public class ReloadConfigCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("reloadspawnpools").requires(source -> source.hasPermissionLevel(2)).executes(ReloadSpawnPoolsCommand::execute));
+        dispatcher.register(CommandManager.literal("reloadconfig").requires(source -> source.hasPermissionLevel(2)).executes(ReloadConfigCommand::execute));
     }
 
     private static int execute(CommandContext<ServerCommandSource> context) {
-        SpawnPoolManager.load();
+        Valdora.loadConfig();
 
         return 1;
     }
