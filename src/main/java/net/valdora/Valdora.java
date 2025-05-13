@@ -3,6 +3,17 @@ package net.valdora;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.util.Identifier;
+import net.valdora.npc.ModNPC;
+import net.valdora.npc.commands.SpawnNPCCommand;
+import net.valdora.npc.custom.StaticNPC;
 import net.valdora.spawning.SpawnPoolManager;
 import net.valdora.commands.DebugValidSpawnsCommand;
 import net.valdora.commands.ReloadConfigCommand;
@@ -36,7 +47,10 @@ public class Valdora implements ModInitializer {
 			ReloadConfigCommand.register(dispatcher);
 			ReloadSpawnPoolsCommand.register(dispatcher);
 			DebugValidSpawnsCommand.register(dispatcher);
+			SpawnNPCCommand.register(dispatcher);
 		}));
+
+		ModNPC.registerEntities();
 	}
 
 	public static void loadConfig() {
