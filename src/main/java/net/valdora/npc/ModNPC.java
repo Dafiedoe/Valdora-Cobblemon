@@ -11,6 +11,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.valdora.Valdora;
+import net.valdora.npc.commands.DeleteNPCCommand;
 import net.valdora.npc.commands.SpawnNPCCommand;
 import net.valdora.npc.custom.StaticNPC;
 import net.valdora.spawning.commands.DebugValidSpawnsCommand;
@@ -38,6 +39,7 @@ public class ModNPC {
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             SpawnNPCCommand.register(dispatcher);
+            DeleteNPCCommand.register(dispatcher);
         }));
     }
 }
