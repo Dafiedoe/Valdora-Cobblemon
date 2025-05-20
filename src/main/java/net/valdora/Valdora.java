@@ -3,69 +3,75 @@ package net.valdora;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
-import net.valdora.npc.ModNPC;
-import net.valdora.npc.commands.SpawnNPCCommand;
-import net.valdora.npc.custom.StaticNPC;
-import net.valdora.spawning.ModSpawning;
-import net.valdora.spawning.SpawnPoolManager;
-import net.valdora.spawning.commands.DebugValidSpawnsCommand;
-import net.valdora.spawning.commands.ReloadConfigCommand;
-import net.valdora.spawning.commands.ReloadSpawnPoolsCommand;
-import net.valdora.spawning.events.DeletePokemonAfterBattleEvent;
-import net.valdora.spawning.events.TallGrassWalkEvent;
 import net.fabricmc.api.ModInitializer;
-
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.valdora.general.SurfManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.valdora.general.ModEntities;
+import net.valdora.npc.ModNPC;
+import net.valdora.spawning.ModSpawning;
+import net.valdora.spawning.events.TallGrassWalkEvent;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * Main mod class for Valdora.
+ */
 public class Valdora implements ModInitializer {
 	public static final String MOD_ID = "valdora";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	@Override
 	public void onInitialize() {
+		LOGGER.info("[Valdora] Initializing mod");
+
 		loadConfig();
 
+		ModEntities.register();
+		ModNPC.registerEntities();
 		ModSpawning.registerSpawning();
 
-		ModNPC.registerEntities();
+		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
+
+		LOGGER.info("[Valdora] Initialization complete");
 	}
 
+	private void onServerTick(MinecraftServer server) {
+		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+			SurfManager.tick(player);
+		}
+	}
+
+	/**
+	 * Reads config/valdora/config.json (if exists) and applies settings.
+	 */
 	public static void loadConfig() {
 		File configFile = new File("config/valdora/config.json");
 		if (!configFile.exists()) {
-			LOGGER.error("Config file not found. Using default values.");
+			LOGGER.warn("[Valdora] No config file found; using defaults");
 			return;
 		}
 
 		try (FileReader reader = new FileReader(configFile)) {
-			Gson gson = new Gson();
-			JsonObject config = gson.fromJson(reader, JsonObject.class);
+			JsonObject cfg = new Gson().fromJson(reader, JsonObject.class);
 
-			if (config.has("min_ticks_before_encounter")) {
-				TallGrassWalkEvent.MIN_TICKS_BEFORE_ENCOUNTER = config.get("min_ticks_before_encounter").getAsInt();
+			if (cfg.has("min_ticks_before_encounter")) {
+				TallGrassWalkEvent.MIN_TICKS_BEFORE_ENCOUNTER =
+						cfg.get("min_ticks_before_encounter").getAsInt();
+			}
+			if (cfg.has("encounter_chance_per_tick")) {
+				TallGrassWalkEvent.ENCOUNTER_CHANCE_PER_TICK =
+						cfg.get("encounter_chance_per_tick").getAsDouble();
 			}
 
-			if (config.has("encounter_chance_per_tick")) {
-				TallGrassWalkEvent.ENCOUNTER_CHANCE_PER_TICK = config.get("encounter_chance_per_tick").getAsDouble();
-			}
-
-			LOGGER.info("Config Loaded!");
+			LOGGER.info("[Valdora] Config loaded successfully");
 		} catch (IOException | JsonSyntaxException e) {
-			LOGGER.error("Failed to load config: " + e.getMessage());
+			LOGGER.error("[Valdora] Failed to load config", e);
 		}
 	}
 }
