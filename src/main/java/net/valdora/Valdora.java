@@ -11,7 +11,6 @@ import net.valdora.general.SurfManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.valdora.general.ModEntities;
-import net.valdora.npc.ModNPC;
 import net.valdora.spawning.ModSpawning;
 import net.valdora.spawning.events.TallGrassWalkEvent;
 
@@ -33,7 +32,6 @@ public class Valdora implements ModInitializer {
 		loadConfig();
 
 		ModEntities.register();
-		ModNPC.registerEntities();
 		ModSpawning.registerSpawning();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
