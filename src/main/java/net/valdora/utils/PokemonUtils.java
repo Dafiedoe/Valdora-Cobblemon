@@ -1,9 +1,12 @@
 package net.valdora.utils;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.battles.BattleBuilder;
 import com.cobblemon.mod.common.battles.BattleRegistry;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
 import net.valdora.Valdora;
@@ -22,6 +25,19 @@ public class PokemonUtils {
     }
 
     public static PokemonEntity spawnWildPokemon(ServerPlayerEntity player) {
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+        boolean hasAvailablePkmn = false;
+        for (int i = 0; i < party.size(); i++) {
+            Pokemon pokemon = party.get(i);
+            if (pokemon != null && !pokemon.isFainted()) {
+                hasAvailablePkmn = true;
+            }
+        }
+        if (!hasAvailablePkmn) {
+            Valdora.LOGGER.info("Player named '" + player.getName() + "' has no pokemon to battle with.");
+            return null;
+        }
+
         World world = player.getWorld();
         Vec3d pos = player.getPos();
         BlockPos blockPos = BlockPos.ofFloored(pos);
