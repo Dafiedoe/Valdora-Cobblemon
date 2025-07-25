@@ -1,13 +1,21 @@
 package net.valdora;
 
+import com.cobblemon.mod.common.CobblemonItems;
+import com.cobblemon.mod.common.api.pokemon.helditem.HeldItemManager;
+import com.cobblemon.mod.common.battles.runner.ShowdownService;
+import com.cobblemon.mod.common.pokemon.helditem.BaseCobblemonHeldItemManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.registry.BuiltinRegistries;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
 import net.valdora.general.SurfManager;
+import net.valdora.trainers.TrainerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.valdora.general.ModEntities;
@@ -33,6 +41,7 @@ public class Valdora implements ModInitializer {
 
 		ModEntities.register();
 		ModSpawning.registerSpawning();
+		TrainerManager.register();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
 
