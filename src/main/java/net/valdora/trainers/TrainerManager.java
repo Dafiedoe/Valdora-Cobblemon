@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.valdora.Valdora;
 import net.valdora.trainers.commands.ReloadTrainersCommand;
 import net.valdora.trainers.commands.StartTrainerBattleCommand;
+import net.valdora.trainers.events.TrainerBattleEndEvent;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -23,6 +24,8 @@ public class TrainerManager {
 
     public static void register() {
         load();
+
+        TrainerBattleEndEvent.register();
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             ReloadTrainersCommand.register(dispatcher);

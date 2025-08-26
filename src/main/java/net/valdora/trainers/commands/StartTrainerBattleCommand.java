@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,25 +26,32 @@ public class StartTrainerBattleCommand {
                 CommandManager.literal("starttrainerbattle")
                         .requires(source -> source.hasPermissionLevel(2))
                         .then(
-                                CommandManager.argument("trainerId", StringArgumentType.string())
-                                        .suggests(TRAINER_SUGGESTIONS)
-                                        .executes(StartTrainerBattleCommand::execute)
+                                CommandManager.argument("target", EntityArgumentType.player())
+                                        .then(
+                                                CommandManager.argument("trainerId", StringArgumentType.string())
+                                                        .suggests(TRAINER_SUGGESTIONS)
+                                                        .then(
+                                                                CommandManager.argument("trainerUuid", StringArgumentType.string())
+                                                                        .executes(StartTrainerBattleCommand::execute)
+                                                        )
+                                        )
                         )
         );
     }
 
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "target");
         String trainerId = StringArgumentType.getString(context, "trainerId");
-        TrainerConfig trainer = TrainerManager.getTrainerById(trainerId);
+        String trainerUuid = StringArgumentType.getString(context, "trainerUuid");
 
+        TrainerConfig trainer = TrainerManager.getTrainerById(trainerId);
         if (trainer == null) {
             context.getSource().sendError(Text.literal("No trainer found with ID: " + trainerId));
-            Valdora.LOGGER.error("No trainer found with ID: " + trainerId);
+            Valdora.LOGGER.error("No trainer found with ID: {}", trainerId);
             return 0;
         }
 
-        PokemonUtils.startTrainerBattle(player, trainerId);
+        PokemonUtils.startTrainerBattle(targetPlayer, trainerId, trainerUuid);
         return 1;
     }
 }

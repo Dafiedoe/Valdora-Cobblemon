@@ -13,10 +13,14 @@ import java.util.UUID;
 
 public class PokemonTeamBattleActor extends AIBattleActor {
     private final String name;
+    private final String id;
+    private final String npcUuid;
 
-    public PokemonTeamBattleActor(String name, @NotNull UUID uuid, @NotNull List<? extends BattlePokemon> pokemonList, @NotNull BattleAI battleAI) {
+    public PokemonTeamBattleActor(String name, String id, String npcUuid, @NotNull UUID uuid, @NotNull List<? extends BattlePokemon> pokemonList, @NotNull BattleAI battleAI) {
         super(uuid, pokemonList, battleAI);
         this.name = name;
+        this.id = id;
+        this.npcUuid = npcUuid;
     }
 
     @NotNull
@@ -35,5 +39,13 @@ public class PokemonTeamBattleActor extends AIBattleActor {
     @Override
     public MutableText nameOwned(@NotNull String pokemonName) {
         return Text.literal(this.name + "'s " + pokemonName);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getNpcUuid() {
+        return npcUuid;
     }
 }

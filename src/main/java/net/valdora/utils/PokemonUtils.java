@@ -115,7 +115,7 @@ public class PokemonUtils {
         return true;
     }
 
-    public static void startTrainerBattle(ServerPlayerEntity player, String trainerId) {
+    public static void startTrainerBattle(ServerPlayerEntity player, String trainerId, String trainerNpcUuid) {
         if (!hasPokemonAvailable(player)) {
             player.sendMessage(Text.literal("You need at least one Pokémon to battle!"), false);
             return;
@@ -167,7 +167,7 @@ public class PokemonUtils {
             BattleAI battleAI = null;
             if (trainer.aiLevel >= 0) battleAI = new StrongBattleAI(trainer.aiLevel);
             else battleAI = new RandomBattleAI();
-            PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, UUID.randomUUID(), trainerTeam, battleAI);
+            PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, trainer.trainerId, trainerNpcUuid, UUID.randomUUID(), trainerTeam, battleAI);
 
             trainerTeam.forEach(p -> p.setActor(trainerActor));
 
@@ -202,7 +202,6 @@ public class PokemonUtils {
                         trainerSide,
                         false
                 );
-                Valdora.LOGGER.info("Battle started successfully");
             });
         } catch (Exception e) {
             Valdora.LOGGER.error("Error starting trainer battle: " + e.getMessage());

@@ -15,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.valdora.general.SurfManager;
+import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.trainers.TrainerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,8 @@ public class Valdora implements ModInitializer {
 
 		loadConfig();
 
+		new PlayerSaveDataManager();
+		PlayerSaveDataManager.INSTANCE.register();
 		ModEntities.register();
 		ModSpawning.registerSpawning();
 		TrainerManager.register();
