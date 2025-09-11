@@ -3,6 +3,7 @@ package net.valdora.trainers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.valdora.Valdora;
 import net.valdora.trainers.commands.ReloadTrainersCommand;
 import net.valdora.trainers.commands.StartTrainerBattleCommand;
@@ -15,14 +16,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class TrainerManager {
     private static final String TRAINER_CONFIG_PATH = "config/valdora/trainers/";
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(ConfigPokemon.class, new ConfigPokemonAdapter())
+            .create();
 
     private static final Map<String, TrainerConfig> TRAINERS = new HashMap<>();
+    private static Map<UUID, TrainerConfig> lastBattledTrainer = new HashMap<>();
 
     public static void register() {
+        lastBattledTrainer = new HashMap<>();
+
         load();
 
         TrainerBattleEndEvent.register();
@@ -44,7 +51,7 @@ public class TrainerManager {
                 return;
             }
 
-            Files.walk(configPath, 1)
+            Files.walk(configPath)
                     .filter(path -> path.toString().endsWith(".json"))
                     .forEach(path -> {
                         try (FileReader reader = new FileReader(path.toFile())) {
@@ -76,6 +83,17 @@ public class TrainerManager {
     public static TrainerConfig getTrainerById(String id) {
         if (TRAINERS.containsKey(id)) {
             return TRAINERS.get(id);
+        }
+        return null;
+    }
+
+    public static void playerStartedBattle(ServerPlayerEntity player, TrainerConfig trainer) {
+        lastBattledTrainer.put(player.getUuid(), trainer);
+    }
+
+    public static TrainerConfig getLastBattle(UUID uuid) {
+        if (lastBattledTrainer.containsKey(uuid)) {
+            return lastBattledTrainer.get(uuid);
         }
         return null;
     }

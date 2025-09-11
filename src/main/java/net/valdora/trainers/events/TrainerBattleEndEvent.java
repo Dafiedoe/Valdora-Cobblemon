@@ -60,10 +60,10 @@ public class TrainerBattleEndEvent {
         if (firstSide.getActors()[0] instanceof PokemonTeamBattleActor pokemonBattleActor &&
                 secondSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
             UUID playerUuid = playerBattleActor.getEntity().getUuid();
-            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerUuid);
+            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerBattleActor.getEntity().getServer(), playerUuid);
             String flag = pokemonBattleActor.getId().toLowerCase();
             progress.setFlag(flag, "defeat");
-            PlayerSaveDataManager.INSTANCE.saveProgress(playerUuid);
+            PlayerSaveDataManager.INSTANCE.saveProgress(playerBattleActor.getEntity().getServer(), playerUuid);
 
             String command = "easy_npc dialog open " + pokemonBattleActor.getNpcUuid() + " " + playerBattleActor.getEntity().getName().getString() + " " + flag + "_ondefeat";
             ServerCommandSource source = playerBattleActor.getEntity().getServer().getCommandSource().withLevel(2);
@@ -77,10 +77,10 @@ public class TrainerBattleEndEvent {
         if (secondSide.getActors()[0] instanceof PokemonTeamBattleActor pokemonBattleActor &&
                 firstSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
             UUID playerUuid = playerBattleActor.getEntity().getUuid();
-            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerUuid);
+            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerBattleActor.getEntity().getServer(), playerUuid);
             String flag = pokemonBattleActor.getId().toLowerCase();
             progress.setFlag(flag, "defeat");
-            PlayerSaveDataManager.INSTANCE.saveProgress(playerUuid);
+            PlayerSaveDataManager.INSTANCE.saveProgress(playerBattleActor.getEntity().getServer(), playerUuid);
 
             String command = "easy_npc dialog open " + pokemonBattleActor.getNpcUuid() + " " + playerBattleActor.getEntity().getName().getString() + " " + flag + "_ondefeat";
             ServerCommandSource source = playerBattleActor.getEntity().getServer().getCommandSource().withLevel(2);
@@ -127,10 +127,10 @@ public class TrainerBattleEndEvent {
         if (firstSide.getActors()[0] instanceof PokemonTeamBattleActor pokemonBattleActor &&
                 secondSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
             UUID playerUuid = playerBattleActor.getEntity().getUuid();
-            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerUuid);
+            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerBattleActor.getEntity().getServer(), playerUuid);
             String flag = pokemonBattleActor.getId().toLowerCase();
             progress.setFlag(flag, "victory");
-            PlayerSaveDataManager.INSTANCE.saveProgress(playerUuid);
+            PlayerSaveDataManager.INSTANCE.saveProgress(playerBattleActor.getEntity().getServer(), playerUuid);
 
             String command = "easy_npc dialog open " + pokemonBattleActor.getNpcUuid() + " " + playerBattleActor.getEntity().getName().getString() + " " + flag + "_onvictory";
             ServerCommandSource source = playerBattleActor.getEntity().getServer().getCommandSource().withLevel(2);
@@ -144,10 +144,10 @@ public class TrainerBattleEndEvent {
         if (secondSide.getActors()[0] instanceof PokemonTeamBattleActor pokemonBattleActor &&
                 firstSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
             UUID playerUuid = playerBattleActor.getEntity().getUuid();
-            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerUuid);
+            PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerBattleActor.getEntity().getServer(), playerUuid);
             String flag = pokemonBattleActor.getId().toLowerCase();
             progress.setFlag(flag, "victory");
-            PlayerSaveDataManager.INSTANCE.saveProgress(playerUuid);
+            PlayerSaveDataManager.INSTANCE.saveProgress(playerBattleActor.getEntity().getServer(), playerUuid);
 
             String command = "easy_npc dialog open " + pokemonBattleActor.getNpcUuid() + " " + playerBattleActor.getEntity().getName().getString() + " " + flag + "_onvictory";
             ServerCommandSource source = playerBattleActor.getEntity().getServer().getCommandSource().withLevel(2);

@@ -18,7 +18,6 @@ import net.minecraft.util.Identifier;
 import net.valdora.Valdora;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ConfigPokemon {
     private static final Map<String, Set<String>> FORM_ASPECTS = Map.ofEntries(

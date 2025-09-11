@@ -1,8 +1,6 @@
 package net.valdora.utils;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.battles.model.actor.AIBattleActor;
-import com.cobblemon.mod.common.api.battles.model.actor.ActorType;
 import com.cobblemon.mod.common.api.battles.model.ai.BattleAI;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
@@ -14,8 +12,6 @@ import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.*;
 import kotlin.Unit;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
@@ -25,6 +21,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.valdora.trainers.ConditionalConfigPokemon;
 import net.valdora.trainers.ConfigPokemon;
 import net.valdora.trainers.TrainerConfig;
 import net.valdora.trainers.TrainerManager;
@@ -141,11 +138,34 @@ public class PokemonUtils {
             List<BattlePokemon> trainerTeam = new ArrayList<>();
 
             for (ConfigPokemon configPokemon : trainer.pokemonTeam) {
+                // Check conditional Pokémon
+                if (configPokemon instanceof ConditionalConfigPokemon conditional) {
+                    if (!conditional.isAllowedForPlayer(player)) {
+                        Valdora.LOGGER.info("Skipping conditional Pokémon " + conditional.species
+                                + " for trainer " + trainer.trainerId
+                                + " (missing flag " + conditional.requiredFlag + "=" + conditional.requiredValue + ")");
+                        continue;
+                    }
+                }
+
+                // Build Pokémon
                 Pokemon builtPkmn = configPokemon.build();
                 if (builtPkmn == null) {
-                    Valdora.LOGGER.error("Failed to build Pokémon");
-                    return;
+                    Valdora.LOGGER.error("Failed to build Pokémon for trainer " + trainer.trainerId);
+                    continue;
                 }
+
+                builtPkmn.setOriginalTrainer(trainer.trainerId);
+
+                // Prevent more than 6 Pokémon in the battle team
+                if (trainerTeam.size() >= 6) {
+                    Valdora.LOGGER.warn("Trainer " + trainer.trainerId
+                            + " has more than 6 valid Pokémon. Extra Pokémon (like "
+                            + builtPkmn.getSpecies().getName() + ") will be ignored.");
+                    break;
+                }
+
+                // Wrap into BattlePokemon
                 BattlePokemon battlePokemon = new BattlePokemon(
                         builtPkmn,
                         builtPkmn.clone(true, player.getServer().getRegistryManager()),
@@ -154,9 +174,18 @@ public class PokemonUtils {
                             return Unit.INSTANCE;
                         }
                 );
-                battlePokemon.getEffectedPokemon().setCurrentHealth(battlePokemon.getEffectedPokemon().getMaxHealth());
+
+                battlePokemon.getEffectedPokemon()
+                        .setCurrentHealth(battlePokemon.getEffectedPokemon().getMaxHealth());
+
                 trainerTeam.add(battlePokemon);
             }
+
+            if (trainerTeam.isEmpty()) {
+                Valdora.LOGGER.error("Trainer " + trainer.trainerId + " has no usable Pokémon after filtering!");
+            }
+
+
 
             if (trainerTeam.isEmpty()) {
                 Valdora.LOGGER.error("Trainer team is empty!");
@@ -201,7 +230,10 @@ public class PokemonUtils {
                         playerSide,
                         trainerSide,
                         false
-                );
+                ).ifSuccessful(e -> {
+                    TrainerManager.playerStartedBattle(player, trainer);
+                    return Unit.INSTANCE;
+                });
             });
         } catch (Exception e) {
             Valdora.LOGGER.error("Error starting trainer battle: " + e.getMessage());

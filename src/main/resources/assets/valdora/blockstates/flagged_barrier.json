@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "valdora:block/flagged_barrier"
+    }
+  }
+}
