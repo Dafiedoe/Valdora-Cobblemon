@@ -1,16 +1,11 @@
 package net.valdora.savedata;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.PokemonStore;
-import com.cobblemon.mod.common.api.storage.party.PartyStore;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.api.storage.pc.PCPosition;
 import com.cobblemon.mod.common.api.storage.pc.PCStore;
 import com.cobblemon.mod.common.pokemon.Pokemon;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -67,6 +62,7 @@ public class PlayerSaveDataManager {
         PayloadTypeRegistry.playC2S().register(DeleteProfilePayload.ID, DeleteProfilePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenProfileGuiPayload.ID, OpenProfileGuiPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ProfileCreationResultPayload.ID, ProfileCreationResultPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(PlayerFlagsS2CPayload.PAYLOAD_ID, PlayerFlagsS2CPayload.CODEC);
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.player;
@@ -115,8 +111,39 @@ public class PlayerSaveDataManager {
                 progress.setArmorItems(armorOut);
                 progress.setOffhandItems(offOut);
 
-                progress.setParty(Cobblemon.INSTANCE.getStorage().getParty(player).saveToJSON(new JsonObject(), server.getRegistryManager()).toString());
-                progress.setPc(Cobblemon.INSTANCE.getStorage().getPC(player).saveToJSON(new JsonObject(), server.getRegistryManager()).toString());
+                PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+                JsonArray partyJson = new JsonArray();
+                for (int slot = 0; slot < party.size(); slot++) {
+                    Pokemon pokemon = party.get(slot);
+                    if (pokemon != null) {
+                        partyJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
+                    } else {
+                        partyJson.add(JsonNull.INSTANCE);
+                    }
+                }
+
+                progress.setParty(partyJson.toString());
+
+                PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+                JsonArray pcJson = new JsonArray();
+                int numBoxes = pc.getBoxes().size();
+                for (int boxIndex = 0; boxIndex < numBoxes; boxIndex++) {
+                    JsonArray boxJson = new JsonArray();
+                    int occupiedCount = pc.getBoxes().get(boxIndex).getNonEmptySlots() != null ? pc.getBoxes().get(boxIndex).getNonEmptySlots().size() : 0;
+                    int emptyCount = pc.getBoxes().get(boxIndex).getUnoccupiedSlots();
+                    int slotCount = occupiedCount + emptyCount;
+                    for (int slot = 0; slot < slotCount; slot++) {
+                        Pokemon pokemon = pc.getBoxes().get(boxIndex).get(slot);
+                        if (pokemon != null) {
+                            boxJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
+                        } else {
+                            boxJson.add(JsonNull.INSTANCE);
+                        }
+                    }
+                    pcJson.add(boxJson);
+                }
+
+                progress.setPc(pcJson.toString());
 
                 saveProfile(player.getServer(), uuid, current, progress);
             }
@@ -191,30 +218,40 @@ public class PlayerSaveDataManager {
                         }
                     }
 
-                    PlayerPartyStore playerParty = Cobblemon.INSTANCE.getStorage().getParty(player);
-                    playerParty.clearParty();
+                    PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+                    party.clearParty();
+
                     if (progress.getParty() != null && !progress.getParty().isEmpty()) {
-                        PartyStore jsonParty = playerParty.loadFromJSON(JsonParser.parseString(progress.getParty()).getAsJsonObject(), player.getServer().getRegistryManager());
-                        for (int slot = 0; slot < 6; slot++) {
-                            Pokemon pokemon = jsonParty.get(slot);
-                            if (pokemon != null) {
-                                playerParty.set(slot, pokemon);
+                        JsonArray partyJson = JsonParser.parseString(progress.getParty()).getAsJsonArray();
+
+                        for (int slot = 0; slot < Math.min(6, partyJson.size()); slot++) {
+                            JsonElement element = partyJson.get(slot);
+                            if (!element.isJsonNull() && element.isJsonObject()) {
+                                Pokemon pokemon = new Pokemon();
+                                pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
+                                party.set(slot, pokemon);
                             }
                         }
-                        playerParty.sendTo(player);
                     }
 
-                    PCStore playerPc = Cobblemon.INSTANCE.getStorage().getPC(player);
-                    playerPc.clearPC();
+                    PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+                    pc.clearPC();
+
                     if (progress.getPc() != null && !progress.getPc().isEmpty()) {
-                        PokemonStore<PCPosition> jsonPc = playerPc.loadFromJSON(JsonParser.parseString(progress.getPc()).getAsJsonObject(), player.getServer().getRegistryManager());
-                        for (int boxNum = 0; boxNum < playerPc.getBoxes().size(); boxNum++) {
-                            int occupiedCount = playerPc.getBoxes().get(boxNum).getNonEmptySlots() != null ? playerPc.getBoxes().get(boxNum).getNonEmptySlots().size() : 0;
-                            int emptyCount = playerPc.getBoxes().get(boxNum).getUnoccupiedSlots();
+                        JsonArray pcJson = JsonParser.parseString(progress.getPc()).getAsJsonArray();
+
+                        for (int boxNum = 0; boxNum < pc.getBoxes().size(); boxNum++) {
+                            JsonArray boxJson = pcJson.get(boxNum).getAsJsonArray();
+                            int occupiedCount = pc.getBoxes().get(boxNum).getNonEmptySlots() != null ? pc.getBoxes().get(boxNum).getNonEmptySlots().size() : 0;
+                            int emptyCount = pc.getBoxes().get(boxNum).getUnoccupiedSlots();
                             int slotCount = occupiedCount + emptyCount;
                             for (int slot = 0; slot < slotCount; slot++) {
-                                if (jsonPc.get(new PCPosition(boxNum, slot)) != null) {
-                                    playerPc.set(new PCPosition(boxNum, slot), jsonPc.get(new PCPosition(boxNum, slot)));
+                                JsonElement element = boxJson.get(slot);
+                                if (!element.isJsonNull() && element.isJsonObject()) {
+                                    Pokemon pokemon = new Pokemon();
+                                    pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
+                                    pc.set(new PCPosition(boxNum, slot), pokemon);
+                                    Valdora.LOGGER.info("Setting boxNum: {}, slot: {}, pokemon: {}", boxNum, slot, pokemon.getSpecies().getName());
                                 }
                             }
                         }

@@ -58,8 +58,6 @@ public class Valdora implements ModInitializer {
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
 
-		PayloadTypeRegistry.playS2C().register(PlayerFlagsS2CPayload.PAYLOAD_ID, PlayerFlagsS2CPayload.CODEC);
-
 		LOGGER.info("[Valdora] Initialization complete");
 	}
 

@@ -1,6 +1,6 @@
 package net.valdora.savedata.flaggedbarrier;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
@@ -13,7 +13,7 @@ public record PlayerFlagsS2CPayload(UUID uuid, Map<String, String> flags) implem
     public static final Identifier ID = Identifier.of("valdora", "player_flags_sync");
     public static final CustomPayload.Id<PlayerFlagsS2CPayload> PAYLOAD_ID = new CustomPayload.Id<>(ID);
 
-    public static final PacketCodec<PacketByteBuf, PlayerFlagsS2CPayload> CODEC =
+    public static final PacketCodec<RegistryByteBuf, PlayerFlagsS2CPayload> CODEC =
             PacketCodec.of(
                     (payload, buf) -> {
                         buf.writeUuid(payload.uuid());

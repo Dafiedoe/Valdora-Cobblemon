@@ -5,15 +5,21 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.entity.BoatEntityRenderer;
 import net.minecraft.entity.vehicle.BoatEntity;
+import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.util.Identifier;
 import net.valdora.general.ModBlockEntities;
 import net.valdora.general.ModBlocks;
 import net.valdora.savedata.PlayerSaveDataManager;
+import net.valdora.savedata.flaggedbarrier.ClientPlayerFlagCache;
 import net.valdora.savedata.flaggedbarrier.FlaggedBarrierEntityRenderer;
+import net.valdora.savedata.flaggedbarrier.PlayerFlagsS2CPayload;
 import net.valdora.savedata.profiles.ProfileCreateScreen;
 import net.valdora.savedata.profiles.ProfileScreen;
 
@@ -61,5 +67,14 @@ public class ValdoraClient implements ClientModInitializer {
                 }
             });
         });
+
+        // register a PlayPayloadHandler that receives a decoded PlayerFlagsS2CPayload
+        ClientPlayNetworking.registerGlobalReceiver(
+                PlayerFlagsS2CPayload.PAYLOAD_ID,
+                (PlayerFlagsS2CPayload payload, ClientPlayNetworking.Context ctx) -> {
+                    MinecraftClient client = ctx.client();
+                    ClientPlayerFlagCache.setFlags(client.player.getUuid(), payload.flags());
+                }
+        );
     }
 }
