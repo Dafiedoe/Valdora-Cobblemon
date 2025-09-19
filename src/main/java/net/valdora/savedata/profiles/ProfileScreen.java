@@ -83,7 +83,7 @@ public class ProfileScreen extends Screen {
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, 0xA0000000);
         int sidebarWidth = 180;
-        context.fill(0, 0, sidebarWidth, height, 0xFF333333); // Solid dark gray
+        context.fill(0, 0, sidebarWidth, height, 0xFF333333);
     }
 
     @Override

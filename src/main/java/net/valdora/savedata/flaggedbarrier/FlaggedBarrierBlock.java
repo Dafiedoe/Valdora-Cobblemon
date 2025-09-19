@@ -12,6 +12,7 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import net.valdora.Valdora;
 import net.valdora.general.ModComponents;
 import net.valdora.savedata.PlayerSaveDataManager;
 
@@ -20,7 +21,6 @@ import java.util.Map;
 public class FlaggedBarrierBlock extends BlockWithEntity {
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(FlaggedBarrierBlock.class);
     private static final boolean DEBUG = false;
-
 
     public FlaggedBarrierBlock(Settings settings) {
         super(settings
@@ -136,7 +136,6 @@ public class FlaggedBarrierBlock extends BlockWithEntity {
 
         return VoxelShapes.fullCube();
     }
-
 
     @Override
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {

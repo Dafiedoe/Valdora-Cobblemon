@@ -13,13 +13,14 @@ import kotlin.Unit;
 import net.minecraft.server.command.ServerCommandSource;
 import net.valdora.Valdora;
 import net.valdora.savedata.PlayerSaveDataManager;
+import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.utils.PokemonTeamBattleActor;
 import java.util.UUID;
 
 public class TrainerBattleEndEvent {
     public static void register() {
         CobblemonEvents.BATTLE_FLED.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleFled);
-        CobblemonEvents.BATTLE_FAINTED.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleFaint);
+        //CobblemonEvents.BATTLE_FAINTED.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleFaint);
         CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleVictory);
     }
 
@@ -56,6 +57,17 @@ public class TrainerBattleEndEvent {
     private static void battleLost(PokemonBattle battle) {
         BattleSide firstSide = battle.getSide1();
         BattleSide secondSide = battle.getSide2();
+
+        if (firstSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
+            if (playerBattleActor.getEntity() != null) {
+                CheckPointManager.recallPlayerToCheckPoint(playerBattleActor.getEntity());
+            }
+        }
+        if (secondSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {
+            if (playerBattleActor.getEntity() != null) {
+                CheckPointManager.recallPlayerToCheckPoint(playerBattleActor.getEntity());
+            }
+        }
 
         if (firstSide.getActors()[0] instanceof PokemonTeamBattleActor pokemonBattleActor &&
                 secondSide.getActors()[0] instanceof PlayerBattleActor playerBattleActor) {

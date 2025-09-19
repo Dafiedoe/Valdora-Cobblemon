@@ -12,7 +12,11 @@ import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.*;
 import kotlin.Unit;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.world.biome.Biome;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
 import net.valdora.Valdora;
@@ -21,6 +25,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.valdora.timespecificevents.ShinyHour;
 import net.valdora.trainers.ConditionalConfigPokemon;
 import net.valdora.trainers.ConfigPokemon;
 import net.valdora.trainers.TrainerConfig;
@@ -75,6 +80,7 @@ public class PokemonUtils {
         int level = random.nextInt(maxLevel - minLevel + 1) + minLevel;
 
         PokemonEntity pokemonEntity = PokemonProperties.Companion.parse(pokemonName.toLowerCase() + " level=" + level).createEntity(world);
+        pokemonEntity.getPokemon().setShiny(rollForShiny(player));
 
         pokemonEntity.setPosition(blockPos.toCenterPos());
 
@@ -240,5 +246,33 @@ public class PokemonUtils {
             e.printStackTrace();
             player.sendMessage(Text.literal("An error occurred while starting the battle."), false);
         }
+    }
+
+    public static boolean rollForShiny(ServerPlayerEntity player) {
+        int roll = randomRoll(player);
+        return roll == 0;
+    }
+
+    private static int randomRoll(ServerPlayerEntity player) {
+        World world = player.getWorld();
+        BlockPos pos = player.getBlockPos();
+
+        RegistryEntry<Biome> biomeEntry = world.getBiome(pos);
+        Biome biome = biomeEntry.value();
+
+        Identifier biomeId = world.getRegistryManager().get(RegistryKeys.BIOME).getId(biome);
+
+        int rollOdds = Valdora.BASE_SHINY_CHANCE;
+
+        if (ShinyHour.isActive()) {
+            if (ShinyHour.getBiome().equalsIgnoreCase(biomeId.getPath())) {
+                rollOdds = (int) Math.floor(1.0 / Valdora.SHINY_TIME_MULTIPLIER * rollOdds);
+                if (ShinyHour.isSunday()) {
+                    rollOdds = (int) Math.floor(1.0 / Valdora.SHINY_SUNDAY_MULTIPLIER * rollOdds);
+                }
+            }
+        }
+
+        return new Random().nextInt(rollOdds + 1);
     }
 }

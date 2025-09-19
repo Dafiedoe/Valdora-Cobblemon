@@ -27,7 +27,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.WorldSavePath;
 import net.minecraft.registry.Registries;
 import net.valdora.Valdora;
 import net.valdora.savedata.flaggedbarrier.PlayerFlagsS2CPayload;
@@ -35,12 +34,16 @@ import net.valdora.savedata.flaggedbarrier.PlayerFlagsS2CPayload;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class PlayerSaveDataManager {
     public static PlayerSaveDataManager INSTANCE;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    private static final String PLAYER_SAVE_DATA_PATH = "valdora/playerdata/";
+
     private final Map<UUID, Map<String, PlayerStoryProgress>> loadedProfiles = new HashMap<>();
     private final Map<UUID, String> currentProfiles = new HashMap<>();
 
@@ -458,7 +461,13 @@ public class PlayerSaveDataManager {
                     pc = (String) pcObj;
                 }
 
-                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc);
+                String cp = "";
+                Object cpObj = json.get("lastcheckpoint");
+                if (cpObj instanceof String) {
+                    cp = (String) cpObj;
+                }
+
+                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
             }
@@ -489,6 +498,8 @@ public class PlayerSaveDataManager {
             json.put("party", progress.getParty());
             json.put("pc", progress.getPc());
 
+            json.put("lastcheckpoint", progress.getLastCheckPoint());
+
             gson.toJson(json, writer);
         } catch (IOException e) {
             Valdora.LOGGER.error("Error saving profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
@@ -506,6 +517,7 @@ public class PlayerSaveDataManager {
                 }
             }
         }
+        sendFlagsToClient(server.getPlayerManager().getPlayer(playerUuid));
     }
 
     private void sendFlagsToClient(ServerPlayerEntity player) {
@@ -526,7 +538,7 @@ public class PlayerSaveDataManager {
     }
 
     private Path getPlayerDir(MinecraftServer server, UUID playerUuid) {
-        return server.getSavePath(WorldSavePath.ROOT).resolve("valdora/playerdata/" + playerUuid.toString());
+        return Paths.get(PLAYER_SAVE_DATA_PATH + playerUuid.toString());
     }
 
     public void createProfile(MinecraftServer server, UUID playerUuid, String profileName, ServerPlayerEntity player) {
@@ -668,6 +680,7 @@ public class PlayerSaveDataManager {
         private final List<SimpleItem> offhand = new ArrayList<>();
         private String party;
         private String pc;
+        private String lastCheckPoint;
 
         public PlayerStoryProgress() {}
 
@@ -676,7 +689,7 @@ public class PlayerSaveDataManager {
         }
 
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
-                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc) {
+                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp) {
             this.flags.putAll(flags);
             this.x = x;
             this.y = y;
@@ -688,6 +701,7 @@ public class PlayerSaveDataManager {
             if (offhand != null) this.offhand.addAll(offhand);
             this.party = party;
             this.pc = pc;
+            this.lastCheckPoint = cp;
         }
 
         public boolean checkFlag(String flag, String value) {
@@ -718,6 +732,8 @@ public class PlayerSaveDataManager {
 
         public String getParty() { return party; }
         public String getPc() { return pc; }
+
+        public String getLastCheckPoint() { return lastCheckPoint; }
 
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
@@ -758,6 +774,10 @@ public class PlayerSaveDataManager {
 
         public void setPc(String pc) {
             this.pc = pc;
+        }
+
+        public void setLastCheckPoint(String cp) {
+            this.lastCheckPoint = cp;
         }
 
         public static class SimpleItem {
