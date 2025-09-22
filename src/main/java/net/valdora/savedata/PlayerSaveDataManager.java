@@ -684,10 +684,6 @@ public class PlayerSaveDataManager {
 
         public PlayerStoryProgress() {}
 
-        public PlayerStoryProgress(Map<String, String> flags) {
-            this.flags.putAll(flags);
-        }
-
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
                                    List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp) {
             this.flags.putAll(flags);
@@ -762,12 +758,6 @@ public class PlayerSaveDataManager {
             if (items != null) offhand.addAll(items);
         }
 
-        public void clearInventory() {
-            main.clear();
-            armor.clear();
-            offhand.clear();
-        }
-
         public void setParty(String party) {
             this.party = party;
         }
@@ -783,8 +773,6 @@ public class PlayerSaveDataManager {
         public static class SimpleItem {
             public String item;
             public int count;
-
-            public SimpleItem() {}
 
             public SimpleItem(String item, int count) {
                 this.item = item;
