@@ -323,16 +323,17 @@ public class PlayerSaveDataManager {
                                                                 sendFlagsToClient(player);
                                                                 return 1;
                                                             })))))
-                                    .then(CommandManager.literal("getflag")
-                                            .then(CommandManager.argument("player", EntityArgumentType.player())
-                                                    .then(CommandManager.argument("flag", StringArgumentType.string())
-                                                            .executes(context -> {
-                                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                                String flag = StringArgumentType.getString(context, "flag").toLowerCase();
-                                                                PlayerStoryProgress progress = getProgress(player.getServer(), player.getUuid());
-                                                                player.sendMessage(Text.literal("Flag '" + flag + "' of " + player.getName().getString() + " is '" + progress.getFlags().get(flag) + "'"));
-                                                                return 1;
-                                                            }))))
+                            .then(CommandManager.literal("getflag")
+                                    .then(CommandManager.argument("player", EntityArgumentType.player())
+                                            .then(CommandManager.argument("flag", StringArgumentType.string())
+                                                    .executes(context -> {
+                                                        ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
+                                                        String flag = StringArgumentType.getString(context, "flag").toLowerCase();
+                                                        ServerPlayerEntity executor = context.getSource().getPlayer();
+                                                        PlayerStoryProgress progress = getProgress(targetPlayer.getServer(), targetPlayer.getUuid());
+                                                        executor.sendMessage(Text.literal("Flag '" + flag + "' of " + targetPlayer.getName().getString() + " is '" + progress.getFlags().get(flag) + "'"));
+                                                        return 1;
+                                                    }))))
                                     .then(CommandManager.literal("clearallflags")
                                             .then(CommandManager.argument("player", EntityArgumentType.player())
                                                     .executes(context -> {
