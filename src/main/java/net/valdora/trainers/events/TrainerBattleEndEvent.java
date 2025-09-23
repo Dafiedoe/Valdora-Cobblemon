@@ -26,7 +26,7 @@ public class TrainerBattleEndEvent {
         battleVictoryEvent.getLosers().stream()
                 .filter(actor -> actor instanceof PlayerBattleActor)
                 .map(actor -> ((PlayerBattleActor) actor).getEntity())
-                .forEach(CheckPointManager::recallPlayerToCheckPoint);
+                .forEach(entity -> CheckPointManager.recallPlayerToCheckPoint(entity, true));
 
         BattleActor actor1 = battle.getSide1().getActors()[0];
         BattleActor actor2 = battle.getSide2().getActors()[0];

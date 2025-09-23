@@ -20,7 +20,7 @@ public class RecallCommand {
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
 
-        CheckPointManager.recallPlayerToCheckPoint(player);
+        CheckPointManager.recallPlayerToCheckPoint(player, false);
 
         return 1;
     }

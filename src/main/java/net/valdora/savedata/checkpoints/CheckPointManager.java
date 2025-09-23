@@ -1,7 +1,11 @@
 package net.valdora.savedata.checkpoints;
 
+import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mojang.brigadier.ParseResults;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -9,6 +13,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -122,8 +127,12 @@ public class CheckPointManager {
         PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
     }
 
-    public static void recallPlayerToCheckPoint(ServerPlayerEntity player) {
+    public static void recallPlayerToCheckPoint(ServerPlayerEntity player, boolean healPokemon) {
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
+
+        if (healPokemon) {
+            TickScheduler.runNextTick(25, () -> Cobblemon.INSTANCE.getStorage().getParty(player).heal());
+        }
 
         if (progress.getLastCheckPoint() == null || (progress.getLastCheckPoint() != null && progress.getLastCheckPoint().isEmpty())) {
             player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 3 * 20, 0, false, false));

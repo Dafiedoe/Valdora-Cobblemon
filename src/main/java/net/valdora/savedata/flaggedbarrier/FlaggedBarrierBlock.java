@@ -12,7 +12,6 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
-import net.valdora.Valdora;
 import net.valdora.general.ModComponents;
 import net.valdora.savedata.PlayerSaveDataManager;
 
@@ -29,6 +28,7 @@ public class FlaggedBarrierBlock extends BlockWithEntity {
                 .luminance(state -> 0)
                 .noBlockBreakParticles()
                 .strength(-1.0F, 3600000.0F)
+                .suffocates(((state, world, pos) -> false))
         );
     }
 
