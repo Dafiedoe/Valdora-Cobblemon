@@ -8,6 +8,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.valdora.general.*;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
+import net.valdora.shops.ShopManager;
 import net.valdora.timespecificevents.ShinyHour;
 import net.valdora.trainers.TrainerManager;
 import org.slf4j.Logger;
@@ -60,6 +61,7 @@ public class Valdora implements ModInitializer {
 		ModBlockEntities.register();
 		TrainerManager.register();
 		CheckPointManager.register();
+		ShopManager.register();
 		ShinyHour.register();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
