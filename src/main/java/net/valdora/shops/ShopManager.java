@@ -58,7 +58,7 @@ public class ShopManager {
                 }
 
                 progress.subtractPokedollars(totalCost);
-                player.giveItemStack(item.getItem(payload.amount()));
+                player.getInventory().insertStack(item.getItem(payload.amount()));
                 PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
 
                 player.sendMessage(Text.literal("You bought " + payload.amount() + "x " + item.getItem(1).getName().getString() + " for " + (item.cost * payload.amount())), false);
