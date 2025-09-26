@@ -468,7 +468,13 @@ public class PlayerSaveDataManager {
                     cp = (String) cpObj;
                 }
 
-                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp);
+                int pokedollars = 0;
+                Object pokedollarsObj = json.get("pokedollars");
+                if (pokedollarsObj instanceof Integer) {
+                    pokedollars = (int) pokedollarsObj;
+                }
+
+                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
             }
@@ -500,6 +506,8 @@ public class PlayerSaveDataManager {
             json.put("pc", progress.getPc());
 
             json.put("lastcheckpoint", progress.getLastCheckPoint());
+
+            json.put("pokedollars", progress.getPokedollars());
 
             gson.toJson(json, writer);
         } catch (IOException e) {
@@ -682,11 +690,12 @@ public class PlayerSaveDataManager {
         private String party;
         private String pc;
         private String lastCheckPoint;
+        private int pokedollars;
 
         public PlayerStoryProgress() {}
 
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
-                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp) {
+                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars) {
             this.flags.putAll(flags);
             this.x = x;
             this.y = y;
@@ -699,6 +708,7 @@ public class PlayerSaveDataManager {
             this.party = party;
             this.pc = pc;
             this.lastCheckPoint = cp;
+            this.pokedollars = pokedollars;
         }
 
         public boolean checkFlag(String flag, String value) {
@@ -731,6 +741,8 @@ public class PlayerSaveDataManager {
         public String getPc() { return pc; }
 
         public String getLastCheckPoint() { return lastCheckPoint; }
+
+        public int getPokedollars() { return pokedollars; }
 
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
@@ -768,7 +780,24 @@ public class PlayerSaveDataManager {
         }
 
         public void setLastCheckPoint(String cp) {
-            this.lastCheckPoint = cp;
+            lastCheckPoint = cp;
+        }
+
+        public void setPokedollars(int amount) {
+            pokedollars = amount;
+        }
+
+        public void addPokedollars(int amount) {
+            pokedollars += amount;
+        }
+
+        public void subtractPokedollars(int amount) {
+            pokedollars -= amount;
+            if (pokedollars < 0) pokedollars = 0;
+        }
+
+        public boolean hasEnoughPokedollars(int amount) {
+            return pokedollars >= amount;
         }
 
         public static class SimpleItem {

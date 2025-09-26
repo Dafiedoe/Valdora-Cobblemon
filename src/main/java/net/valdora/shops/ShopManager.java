@@ -4,7 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.valdora.Valdora;
+import net.valdora.savedata.PlayerSaveDataManager;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -22,10 +26,44 @@ public class ShopManager {
 
     public static void register() {
         PayloadTypeRegistry.playS2C().register(OpenShopS2CPayload.ID, OpenShopS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(PurchaseC2SPayload.ID, PurchaseC2SPayload.CODEC);
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             OpenShopCommand.register(dispatcher);
+            AddPokedollarsCommand.register(dispatcher);
         }));
+
+        ServerPlayNetworking.registerGlobalReceiver(PurchaseC2SPayload.ID, (payload, context) -> {
+            ServerPlayerEntity player = context.player();
+            context.server().execute(() -> {
+                ConfigShop shop = ShopManager.getShopById(payload.shopId());
+                if (shop == null) return;
+
+                ShopItem item = shop.items.stream()
+                        .filter(it -> payload.itemId().equals(it.item))
+                        .findFirst()
+                        .orElse(null);
+                if (item == null) return;
+
+                PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
+                if (progress == null) {
+                    Valdora.LOGGER.warn(player.getName() + " has no or invalid save data!");
+                    return;
+                }
+
+                int totalCost = item.cost * payload.amount();
+                if (!progress.hasEnoughPokedollars(totalCost)) {
+                    player.sendMessage(Text.literal("You dont have enough pokedollars to buy this!"));
+                    return;
+                }
+
+                progress.subtractPokedollars(totalCost);
+                player.giveItemStack(item.getItem(payload.amount()));
+                PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
+
+                player.sendMessage(Text.literal("You bought " + payload.amount() + "x " + item.getItem(1).getName().getString() + " for " + (item.cost * payload.amount())), false);
+            });
+        });
 
         load();
     }
