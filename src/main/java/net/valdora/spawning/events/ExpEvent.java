@@ -4,7 +4,6 @@ import com.cobblemon.mod.common.api.Priority;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.pokemon.ExperienceGainedPreEvent;
 import kotlin.Unit;
-import net.valdora.Valdora;
 import net.valdora.trainers.TrainerConfig;
 import net.valdora.trainers.TrainerManager;
 

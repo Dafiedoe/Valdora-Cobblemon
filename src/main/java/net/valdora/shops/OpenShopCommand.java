@@ -10,10 +10,7 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.valdora.Valdora;
-
-import javax.swing.text.html.parser.Entity;
 
 public class OpenShopCommand {
     private static final SuggestionProvider<ServerCommandSource> SHOP_ID_SUGGESTER =

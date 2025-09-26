@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.valdora.Valdora;
-import net.valdora.trainers.commands.ReloadTrainersCommand;
 import net.valdora.trainers.commands.StartTrainerBattleCommand;
 import net.valdora.trainers.events.TrainerBattleEndEvent;
 
@@ -35,7 +34,6 @@ public class TrainerManager {
         TrainerBattleEndEvent.register();
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            ReloadTrainersCommand.register(dispatcher);
             StartTrainerBattleCommand.register(dispatcher);
         }));
     }

@@ -2,6 +2,7 @@ package net.valdora;
 
 import com.google.gson.*;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -65,6 +66,10 @@ public class Valdora implements ModInitializer {
 		ShinyHour.register();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
+
+		CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
+			ReloadModCommand.register(dispatcher);
+		}));
 
 		LOGGER.info("[Valdora] Initialization complete");
 	}
