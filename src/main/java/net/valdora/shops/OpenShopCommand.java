@@ -40,7 +40,7 @@ public class OpenShopCommand {
             return 0;
         }
 
-        OpenShopS2CPayload payload = new OpenShopS2CPayload(shop);
+        OpenShopS2CPayload payload = new OpenShopS2CPayload(shop, player);
         ServerPlayNetworking.send(player, payload);
         return 1;
     }

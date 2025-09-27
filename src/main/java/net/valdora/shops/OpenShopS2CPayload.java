@@ -3,8 +3,10 @@ package net.valdora.shops;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.valdora.Valdora;
+import net.valdora.savedata.PlayerSaveDataManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,7 @@ public final class OpenShopS2CPayload implements CustomPayload {
     public final String shopId;
     public final String title;
     public final List<ItemData> items;
+    public final int pokedollars;
 
     public record ItemData(String itemId, int cost) { }
 
@@ -41,10 +44,11 @@ public final class OpenShopS2CPayload implements CustomPayload {
             list.add(new ItemData(iid, cost));
         }
         this.items = List.copyOf(list);
+        this.pokedollars = buf.readVarInt();
     }
 
     // Convenience constructor to create a payload from your ConfigShop
-    public OpenShopS2CPayload(ConfigShop shop) {
+    public OpenShopS2CPayload(ConfigShop shop, ServerPlayerEntity player) {
         this.shopId = shop.id == null ? "" : shop.id;
         this.title = shop.title == null ? "" : shop.title;
         List<ItemData> list = new ArrayList<>();
@@ -54,6 +58,8 @@ public final class OpenShopS2CPayload implements CustomPayload {
             }
         }
         this.items = List.copyOf(list);
+        PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
+        this.pokedollars = progress.getPokedollars();
     }
 
     // Writes this payload into the PacketByteBuf (used by PacketCodec.of's encoder)
@@ -65,6 +71,7 @@ public final class OpenShopS2CPayload implements CustomPayload {
             buf.writeString(Objects.requireNonNullElse(it.itemId(), ""));
             buf.writeVarInt(it.cost());
         }
+        buf.writeVarInt(this.pokedollars);
     }
 
     @Override
