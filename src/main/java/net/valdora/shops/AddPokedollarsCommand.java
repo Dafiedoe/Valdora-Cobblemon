@@ -38,8 +38,8 @@ public class AddPokedollarsCommand {
 
         PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
 
-        source.sendMessage(Text.literal("Gave " + player.getName().getString() + " " + amount + " pokedollars!"));
-        player.sendMessage(Text.literal("You've gained " + amount + " pokedollars!"));
+        source.sendMessage(Text.literal("Gave " + player.getName().getString() + " ₽" + amount + "!"));
+        player.sendMessage(Text.literal("You've gained ₽" + amount + "!"));
 
         return 1;
     }

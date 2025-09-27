@@ -9,4 +9,5 @@ public class TrainerConfig {
     public List<ConfigPokemon> pokemonTeam;
     public int aiLevel;
     public float xpMultiplier;
+    public int pokedollarReward;
 }

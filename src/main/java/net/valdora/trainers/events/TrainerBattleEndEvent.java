@@ -9,9 +9,12 @@ import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
 import com.mojang.brigadier.ParseResults;
 import kotlin.Unit;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import net.valdora.Valdora;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
+import net.valdora.trainers.TrainerConfig;
+import net.valdora.trainers.TrainerManager;
 import net.valdora.utils.PokemonTeamBattleActor;
 import java.util.UUID;
 
@@ -49,8 +52,15 @@ public class TrainerBattleEndEvent {
 
             UUID playerUuid = playerActor.getEntity().getUuid();
             PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerActor.getEntity().getServer(), playerUuid);
-            String flag = trainerActor.getId().toLowerCase();
+            TrainerConfig trainer = TrainerManager.getTrainerById(trainerActor.getId());
+            if (trainer == null) {
+                Valdora.LOGGER.warn("No trainer with id '" + trainerActor.getId() + "' found!");
+                return null;
+            }
+            String flag = trainer.trainerId;
             progress.setFlag(flag, status);
+            progress.addPokedollars(trainer.pokedollarReward);
+            playerActor.getEntity().sendMessage(Text.literal("You received ₽" + trainer.pokedollarReward + " for winning!"));
             PlayerSaveDataManager.INSTANCE.saveProgress(playerActor.getEntity().getServer(), playerUuid);
 
             String command = "easy_npc dialog open " + trainerActor.getNpcUuid() + " " + playerActor.getEntity().getName().getString() + " " + flag + dialogSuffix;

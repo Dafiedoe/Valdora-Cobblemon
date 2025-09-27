@@ -26,6 +26,8 @@ public class ShopScreen extends Screen {
     private ShopItem selectedItem = null;
     private int purchaseAmount = 1;
 
+    private int playerPokedollars = 0;
+
     public ShopScreen(ConfigShop shopItems) {
         super(Text.literal(shopItems.title == null ? "Shop" : shopItems.title));
         this.shopConfig = shopItems;
@@ -82,6 +84,11 @@ public class ShopScreen extends Screen {
 
         int titleX = this.width / 2 - this.textRenderer.getWidth(this.title) / 2;
         context.drawText(this.textRenderer, this.title, titleX, 10, 0xFFFFFF, false);
+
+        String balance = "₽ " + playerPokedollars;
+        int balanceWidth = this.textRenderer.getWidth(balance);
+        context.drawText(this.textRenderer, balance,
+                this.width - balanceWidth - 10, 10, 0x55FF55, false);
 
         context.fill(listLeft - 2, listTop - 2, listRight + 2, listTop + listHeight + 2, 0xCC000000);
         context.fill(listLeft, listTop, listRight, listTop + listHeight, 0x88000000);
@@ -257,6 +264,10 @@ public class ShopScreen extends Screen {
         context.fill(0, 0, width, height, 0xA0000000);
     }
 
+    public void setPlayerPokedollars(int amount) {
+        this.playerPokedollars = amount;
+    }
+
     private void openPurchaseOverlay() {
         showPurchaseOverlay = true;
         purchaseAmount = 1;
@@ -281,6 +292,8 @@ public class ShopScreen extends Screen {
 
         PurchaseC2SPayload payload = new PurchaseC2SPayload(shopConfig.id, selectedItem.item, purchaseAmount);
         ClientPlayNetworking.send(payload);
+
+        setPlayerPokedollars(playerPokedollars - (selectedItem.cost * purchaseAmount));
 
         closePurchaseOverlay();
     }

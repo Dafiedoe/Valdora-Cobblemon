@@ -81,7 +81,10 @@ public class ValdoraClient implements ClientModInitializer {
             // switch to the render thread & open the screen
             client.execute(() -> {
                 ConfigShop shop = payload.toConfigShop();
-                client.setScreen(new ShopScreen(shop));
+                ShopScreen screen = new ShopScreen(shop);
+                PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(context.player().getServer(), context.player().getUuid());
+                screen.setPlayerPokedollars(progress.getPokedollars());
+                client.setScreen(screen);
             });
         });
     }
