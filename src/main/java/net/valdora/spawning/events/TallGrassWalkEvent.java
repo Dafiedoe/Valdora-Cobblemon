@@ -56,35 +56,25 @@ public class TallGrassWalkEvent {
                 int ticks = ticksInSpawnRegion.getOrDefault(player, 0) + 1;
                 ticksInSpawnRegion.put(player, ticks);
 
-                if (ticks >= MIN_TICKS_BEFORE_ENCOUNTER) {
-                    if (random.nextDouble() < ENCOUNTER_CHANCE_PER_TICK) {
-                        startWildBattle(player);
-                        ticksInSpawnRegion.remove(player);
+                boolean shouldSpawnWild = false;
+                if (settings.min_ticks_before_encounter >= 0 && settings.encounter_chance_per_tick >= 0) {
+                    if (ticks >= settings.min_ticks_before_encounter) {
+                        if (random.nextDouble() < settings.encounter_chance_per_tick) {
+                            shouldSpawnWild = true;
+                        }
+                    }
+                } else {
+                    if (ticks >= MIN_TICKS_BEFORE_ENCOUNTER) {
+                        if (random.nextDouble() < ENCOUNTER_CHANCE_PER_TICK) {
+                            shouldSpawnWild = true;
+                        }
                     }
                 }
 
-                /*
-                boolean isInGrass = world.getBlockState(blockPos).getBlock() == Blocks.TALL_GRASS;
-
-                if (!isInGrass) {
+                if (shouldSpawnWild) {
+                    startWildBattle(player);
                     ticksInSpawnRegion.remove(player);
-                    continue;
                 }
-
-                if (isPlayerInBattle(player)) {
-                    continue;
-                }
-
-                int ticks = ticksInSpawnRegion.getOrDefault(player, 0) + 1;
-                ticksInSpawnRegion.put(player, ticks);
-
-                if (ticks >= MIN_TICKS_BEFORE_ENCOUNTER) {
-                    if (random.nextDouble() < ENCOUNTER_CHANCE_PER_TICK) {
-                        startWildBattle(player);
-                        ticksInSpawnRegion.remove(player);
-                    }
-                }
-                 */
             }
         });
     }
