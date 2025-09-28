@@ -12,6 +12,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.valdora.Valdora;
 import net.valdora.general.ModBlocks;
 import net.valdora.general.ModComponents;
 
@@ -27,20 +28,13 @@ public class GetBarrierCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(
                 CommandManager.literal("valdora")
-                        .requires(source -> Permissions.check(source, "valdora.getflaggedbarrier"))
-                        .then(
-                                CommandManager.literal("getbarrier")
-                                        .then(
-                                                CommandManager.argument("flag", StringArgumentType.string())
-                                                        .suggests(FLAG_SUGGESTIONS)
-                                                        .then(
-                                                                CommandManager.argument("value", StringArgumentType.string())
-                                                                        .suggests(VALUE_SUGGESTIONS)
-                                                                        .executes(GetBarrierCommand::execute)
-                                                        )
-                                        )
-                        )
-        );
+                        .then(CommandManager.literal("getbarrier")
+                                .requires(source -> Permissions.check(source, "valdora.getflaggedbarrier", 2))
+                                .then(CommandManager.argument("flag", StringArgumentType.string())
+                                        .suggests(FLAG_SUGGESTIONS)
+                                        .then(CommandManager.argument("value", StringArgumentType.string())
+                                                .suggests(VALUE_SUGGESTIONS)
+                                                .executes(GetBarrierCommand::execute)))));
     }
 
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

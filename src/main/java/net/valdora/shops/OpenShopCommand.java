@@ -24,8 +24,8 @@ public class OpenShopCommand {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(src -> Permissions.check(src, "valdora.openshop"))
                 .then(CommandManager.literal("openshop")
+                        .requires(source -> Permissions.check(source, "valdora.openshop", 2))
                         .then(CommandManager.argument("shopid", StringArgumentType.word())
                                 .suggests(SHOP_ID_SUGGESTER)
                                 .then(CommandManager.argument("player", EntityArgumentType.player())

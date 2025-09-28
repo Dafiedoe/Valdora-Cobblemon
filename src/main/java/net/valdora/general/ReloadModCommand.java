@@ -15,8 +15,8 @@ import net.valdora.trainers.TrainerManager;
 public class ReloadModCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(source -> Permissions.check(source, "valdora.reload"))
                 .then(CommandManager.literal("reload")
+                        .requires(source -> Permissions.check(source, "valdora.reload", 2))
                         .executes(ReloadModCommand::execute)));
     }
 

@@ -8,12 +8,13 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.valdora.Valdora;
 
 public class RecallCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(source -> Permissions.check(source, "valdora.recall"))
                 .then(CommandManager.literal("recall")
+                        .requires(source -> Permissions.check(source, "valdora.recall", 2))
                         .then(CommandManager.argument("player", EntityArgumentType.player())
                                 .executes(RecallCommand::execute))));
     }

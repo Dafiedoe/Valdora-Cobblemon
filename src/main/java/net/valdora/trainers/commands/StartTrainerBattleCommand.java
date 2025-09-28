@@ -25,19 +25,12 @@ public class StartTrainerBattleCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(
                 CommandManager.literal("starttrainerbattle")
-                        .requires(source -> Permissions.check(source, "valdora.starttrainerbattle"))
-                        .then(
-                                CommandManager.argument("target", EntityArgumentType.player())
-                                        .then(
-                                                CommandManager.argument("trainerId", StringArgumentType.string())
-                                                        .suggests(TRAINER_SUGGESTIONS)
-                                                        .then(
-                                                                CommandManager.argument("trainerUuid", StringArgumentType.string())
-                                                                        .executes(StartTrainerBattleCommand::execute)
-                                                        )
-                                        )
-                        )
-        );
+                        .then(CommandManager.argument("target", EntityArgumentType.player())
+                                .requires(source -> Permissions.check(source, "valdora.starttrainerbattle", 2))
+                                .then(CommandManager.argument("trainerId", StringArgumentType.string())
+                                        .suggests(TRAINER_SUGGESTIONS)
+                                        .then(CommandManager.argument("trainerUuid", StringArgumentType.string())
+                                                .executes(StartTrainerBattleCommand::execute)))));
     }
 
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

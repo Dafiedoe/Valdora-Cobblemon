@@ -11,6 +11,7 @@ import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -68,6 +69,12 @@ public class PlayerSaveDataManager {
         PayloadTypeRegistry.playS2C().register(ProfileCreationResultPayload.ID, ProfileCreationResultPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(PlayerFlagsS2CPayload.PAYLOAD_ID, PlayerFlagsS2CPayload.CODEC);
 
+        ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                handlePlayerDisconnect(player);
+            }
+        });
+
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.player;
             List<String> profiles = getProfiles(player.getServer(), player.getUuid());
@@ -76,85 +83,7 @@ public class PlayerSaveDataManager {
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ServerPlayerEntity player = handler.player;
-            UUID uuid = player.getUuid();
-            String current = currentProfiles.get(uuid);
-            if (current != null) {
-                Map<String, PlayerStoryProgress> playerProfs = loadedProfiles.computeIfAbsent(uuid, k -> new HashMap<>());
-                PlayerStoryProgress progress = playerProfs.computeIfAbsent(current, k -> loadProfile(player.getServer(), uuid, current));
-                progress.setCoords(player.getX(), player.getY(), player.getZ());
-                progress.setYawPitch(player.getYaw(), player.getPitch());
-
-                List<PlayerStoryProgress.SimpleItem> mainOut = new ArrayList<>();
-                for (int i = 0; i < player.getInventory().main.size(); i++) {
-                    ItemStack s = player.getInventory().main.get(i);
-                    if (s != null && !s.isEmpty()) {
-                        Identifier id = Registries.ITEM.getId(s.getItem());
-                        mainOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
-                    }
-                }
-
-                List<PlayerStoryProgress.SimpleItem> armorOut = new ArrayList<>();
-                for (int i = 0; i < player.getInventory().armor.size(); i++) {
-                    ItemStack s = player.getInventory().armor.get(i);
-                    if (s != null && !s.isEmpty()) {
-                        Identifier id = Registries.ITEM.getId(s.getItem());
-                        armorOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
-                    }
-                }
-
-                List<PlayerStoryProgress.SimpleItem> offOut = new ArrayList<>();
-                for (int i = 0; i < player.getInventory().offHand.size(); i++) {
-                    ItemStack s = player.getInventory().offHand.get(i);
-                    if (s != null && !s.isEmpty()) {
-                        Identifier id = Registries.ITEM.getId(s.getItem());
-                        offOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
-                    }
-                }
-
-                progress.setMainItems(mainOut);
-                progress.setArmorItems(armorOut);
-                progress.setOffhandItems(offOut);
-
-                PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
-                JsonArray partyJson = new JsonArray();
-                for (int slot = 0; slot < party.size(); slot++) {
-                    Pokemon pokemon = party.get(slot);
-                    if (pokemon != null) {
-                        partyJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
-                    } else {
-                        partyJson.add(JsonNull.INSTANCE);
-                    }
-                }
-
-                progress.setParty(partyJson.toString());
-
-                PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
-                JsonArray pcJson = new JsonArray();
-                int numBoxes = pc.getBoxes().size();
-                for (int boxIndex = 0; boxIndex < numBoxes; boxIndex++) {
-                    JsonArray boxJson = new JsonArray();
-                    int occupiedCount = pc.getBoxes().get(boxIndex).getNonEmptySlots() != null ? pc.getBoxes().get(boxIndex).getNonEmptySlots().size() : 0;
-                    int emptyCount = pc.getBoxes().get(boxIndex).getUnoccupiedSlots();
-                    int slotCount = occupiedCount + emptyCount;
-                    for (int slot = 0; slot < slotCount; slot++) {
-                        Pokemon pokemon = pc.getBoxes().get(boxIndex).get(slot);
-                        if (pokemon != null) {
-                            boxJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
-                        } else {
-                            boxJson.add(JsonNull.INSTANCE);
-                        }
-                    }
-                    pcJson.add(boxJson);
-                }
-
-                progress.setPc(pcJson.toString());
-
-                saveProfile(player.getServer(), uuid, current, progress);
-            }
-
-            saveProgress(player.getServer(), uuid);
-            loadedProfiles.remove(uuid);
-            currentProfiles.remove(uuid);
+            handlePlayerDisconnect(player);
         });
 
         ServerPlayNetworking.registerGlobalReceiver(CreateProfilePayload.ID, (payload, context) -> {
@@ -285,8 +214,8 @@ public class PlayerSaveDataManager {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("valdora")
-                    .requires(source -> Permissions.check(source, "valdora.flags"))
                     .then(CommandManager.literal("checkflag")
+                            .requires(source -> Permissions.check(source, "valdora.flags", 2))
                             .then(CommandManager.argument("player", EntityArgumentType.player())
                                     .then(CommandManager.argument("flag", StringArgumentType.string())
                                             .then(CommandManager.argument("fromUUID", StringArgumentType.string())
@@ -306,47 +235,132 @@ public class PlayerSaveDataManager {
                                                         source.getServer().getCommandManager().execute(parseResults, command);
                                                         return 1;
                                                     })))))
-                            .then(CommandManager.literal("setflag")
-                                    .then(CommandManager.argument("player", EntityArgumentType.player())
-                                            .then(CommandManager.argument("flag", StringArgumentType.string())
-                                                    .then(CommandManager.argument("value", StringArgumentType.string())
-                                                            .executes(context -> {
-                                                                ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-                                                                String flag = StringArgumentType.getString(context, "flag").toLowerCase();
-                                                                String value = StringArgumentType.getString(context, "value").toLowerCase();
-                                                                PlayerStoryProgress progress = getProgress(player.getServer(), player.getUuid());
-                                                                if (value.equals("null")) {
-                                                                    progress.removeFlag(flag);
-                                                                } else {
-                                                                    progress.setFlag(flag, value);
-                                                                }
-                                                                saveProgress(player.getServer(), player.getUuid());
-                                                                sendFlagsToClient(player);
-                                                                return 1;
-                                                            })))))
-                            .then(CommandManager.literal("getflag")
-                                    .then(CommandManager.argument("player", EntityArgumentType.player())
-                                            .then(CommandManager.argument("flag", StringArgumentType.string())
-                                                    .executes(context -> {
-                                                        ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
-                                                        String flag = StringArgumentType.getString(context, "flag").toLowerCase();
-                                                        ServerPlayerEntity executor = context.getSource().getPlayer();
-                                                        PlayerStoryProgress progress = getProgress(targetPlayer.getServer(), targetPlayer.getUuid());
-                                                        executor.sendMessage(Text.literal("Flag '" + flag + "' of " + targetPlayer.getName().getString() + " is '" + progress.getFlags().get(flag) + "'"));
-                                                        return 1;
-                                                    }))))
-                                    .then(CommandManager.literal("clearallflags")
-                                            .then(CommandManager.argument("player", EntityArgumentType.player())
+                    .then(CommandManager.literal("setflag")
+                            .requires(source -> Permissions.check(source, "valdora.flags", 2))
+                            .then(CommandManager.argument("player", EntityArgumentType.player())
+                                    .then(CommandManager.argument("flag", StringArgumentType.string())
+                                            .then(CommandManager.argument("value", StringArgumentType.string())
                                                     .executes(context -> {
                                                         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+                                                        String flag = StringArgumentType.getString(context, "flag").toLowerCase();
+                                                        String value = StringArgumentType.getString(context, "value").toLowerCase();
                                                         PlayerStoryProgress progress = getProgress(player.getServer(), player.getUuid());
-                                                        progress.getFlags().clear();
+                                                        if (value.equals("null")) {
+                                                            progress.removeFlag(flag);
+                                                        } else {
+                                                            progress.setFlag(flag, value);
+                                                        }
                                                         saveProgress(player.getServer(), player.getUuid());
                                                         sendFlagsToClient(player);
-                                                        player.sendMessage(Text.literal("All flags cleared for " + player.getName().getString()));
                                                         return 1;
-                                                    }))));
+                                                    })))))
+                    .then(CommandManager.literal("getflag")
+                            .requires(source -> Permissions.check(source, "valdora.flags", 2))
+                            .then(CommandManager.argument("player", EntityArgumentType.player())
+                                    .then(CommandManager.argument("flag", StringArgumentType.string())
+                                            .executes(context -> {
+                                                ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "player");
+                                                String flag = StringArgumentType.getString(context, "flag").toLowerCase();
+                                                ServerPlayerEntity executor = context.getSource().getPlayer();
+                                                PlayerStoryProgress progress = getProgress(targetPlayer.getServer(), targetPlayer.getUuid());
+                                                executor.sendMessage(Text.literal("Flag '" + flag + "' of " + targetPlayer.getName().getString() + " is '" + progress.getFlags().get(flag) + "'"));
+                                                return 1;
+                                            }))))
+                    .then(CommandManager.literal("clearallflags")
+                            .requires(source -> Permissions.check(source, "valdora.flags", 2))
+                            .then(CommandManager.argument("player", EntityArgumentType.player())
+                                    .executes(context -> {
+                                        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+                                        PlayerStoryProgress progress = getProgress(player.getServer(), player.getUuid());
+                                        progress.getFlags().clear();
+                                        saveProgress(player.getServer(), player.getUuid());
+                                        sendFlagsToClient(player);
+                                        player.sendMessage(Text.literal("All flags cleared for " + player.getName().getString()));
+                                        return 1;
+                                    }))));
         });
+    }
+
+    private void handlePlayerDisconnect(ServerPlayerEntity player) {
+        UUID uuid = player.getUuid();
+        String current = currentProfiles.get(uuid);
+        if (current != null) {
+            Map<String, PlayerStoryProgress> playerProfs = loadedProfiles.computeIfAbsent(uuid, k -> new HashMap<>());
+            PlayerStoryProgress progress = playerProfs.computeIfAbsent(current, k -> loadProfile(player.getServer(), uuid, current));
+            progress.setCoords(player.getX(), player.getY(), player.getZ());
+            progress.setYawPitch(player.getYaw(), player.getPitch());
+
+            List<PlayerStoryProgress.SimpleItem> mainOut = new ArrayList<>();
+            for (int i = 0; i < player.getInventory().main.size(); i++) {
+                ItemStack s = player.getInventory().main.get(i);
+                if (s != null && !s.isEmpty()) {
+                    Identifier id = Registries.ITEM.getId(s.getItem());
+                    mainOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                }
+            }
+
+            List<PlayerStoryProgress.SimpleItem> armorOut = new ArrayList<>();
+            for (int i = 0; i < player.getInventory().armor.size(); i++) {
+                ItemStack s = player.getInventory().armor.get(i);
+                if (s != null && !s.isEmpty()) {
+                    Identifier id = Registries.ITEM.getId(s.getItem());
+                    armorOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                }
+            }
+
+            List<PlayerStoryProgress.SimpleItem> offOut = new ArrayList<>();
+            for (int i = 0; i < player.getInventory().offHand.size(); i++) {
+                ItemStack s = player.getInventory().offHand.get(i);
+                if (s != null && !s.isEmpty()) {
+                    Identifier id = Registries.ITEM.getId(s.getItem());
+                    offOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                }
+            }
+
+            progress.setMainItems(mainOut);
+            progress.setArmorItems(armorOut);
+            progress.setOffhandItems(offOut);
+
+            PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+            JsonArray partyJson = new JsonArray();
+            for (int slot = 0; slot < party.size(); slot++) {
+                Pokemon pokemon = party.get(slot);
+                if (pokemon != null) {
+                    partyJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
+                } else {
+                    partyJson.add(JsonNull.INSTANCE);
+                }
+            }
+
+            progress.setParty(partyJson.toString());
+
+            PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
+            JsonArray pcJson = new JsonArray();
+            int numBoxes = pc.getBoxes().size();
+            for (int boxIndex = 0; boxIndex < numBoxes; boxIndex++) {
+                JsonArray boxJson = new JsonArray();
+                int occupiedCount = pc.getBoxes().get(boxIndex).getNonEmptySlots() != null ? pc.getBoxes().get(boxIndex).getNonEmptySlots().size() : 0;
+                int emptyCount = pc.getBoxes().get(boxIndex).getUnoccupiedSlots();
+                int slotCount = occupiedCount + emptyCount;
+                for (int slot = 0; slot < slotCount; slot++) {
+                    Pokemon pokemon = pc.getBoxes().get(boxIndex).get(slot);
+                    if (pokemon != null) {
+                        boxJson.add(pokemon.saveToJSON(player.getRegistryManager(), new JsonObject()));
+                    } else {
+                        boxJson.add(JsonNull.INSTANCE);
+                    }
+                }
+                pcJson.add(boxJson);
+            }
+
+            progress.setPc(pcJson.toString());
+
+            saveProfile(player.getServer(), uuid, current, progress);
+        }
+
+        saveProgress(player.getServer(), uuid);
+        loadedProfiles.remove(uuid);
+        currentProfiles.remove(uuid);
     }
 
     public PlayerStoryProgress getProgress(MinecraftServer server, UUID playerUuid) {

@@ -3,6 +3,7 @@ package net.valdora.spawning.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.valdora.Valdora;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
 import net.minecraft.server.command.CommandManager;
@@ -16,8 +17,8 @@ import java.util.stream.Collectors;
 public class DebugValidSpawnsCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(source -> Permissions.check(source, "valdora.debugspawns"))
                 .then(CommandManager.literal("debugvalidspawns")
+                        .requires(source -> Permissions.check(source, "valdora.debugspawns", 2))
                         .executes(DebugValidSpawnsCommand::execute)));
     }
 

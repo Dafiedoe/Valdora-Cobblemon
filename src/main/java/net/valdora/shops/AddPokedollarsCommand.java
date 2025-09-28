@@ -16,8 +16,8 @@ import net.valdora.savedata.PlayerSaveDataManager;
 public class AddPokedollarsCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(src -> Permissions.check(src, "valdora.pokedollars"))
                 .then(CommandManager.literal("addpokedollars")
+                        .requires(source -> Permissions.check(source, "valdora.pokedollars", 2))
                         .then(CommandManager.argument("player", EntityArgumentType.player())
                                 .then(CommandManager.argument("amount", IntegerArgumentType.integer())
                                         .executes(AddPokedollarsCommand::execute)))));
