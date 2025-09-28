@@ -9,6 +9,7 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -284,7 +285,7 @@ public class PlayerSaveDataManager {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("valdora")
-                    .requires(source -> source.hasPermissionLevel(2))
+                    .requires(source -> Permissions.check(source, "valdora.flags"))
                     .then(CommandManager.literal("checkflag")
                             .then(CommandManager.argument("player", EntityArgumentType.player())
                                     .then(CommandManager.argument("flag", StringArgumentType.string())

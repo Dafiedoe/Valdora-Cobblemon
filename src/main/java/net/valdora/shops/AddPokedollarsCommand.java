@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -15,7 +16,7 @@ import net.valdora.savedata.PlayerSaveDataManager;
 public class AddPokedollarsCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(src -> src.hasPermissionLevel(2))
+                .requires(src -> Permissions.check(src, "valdora.pokedollars"))
                 .then(CommandManager.literal("addpokedollars")
                         .then(CommandManager.argument("player", EntityArgumentType.player())
                                 .then(CommandManager.argument("amount", IntegerArgumentType.integer())

@@ -3,6 +3,7 @@ package net.valdora.savedata.checkpoints;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -11,7 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class RecallCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(source -> source.hasPermissionLevel(2))
+                .requires(source -> Permissions.check(source, "valdora.recall"))
                 .then(CommandManager.literal("recall")
                         .then(CommandManager.argument("player", EntityArgumentType.player())
                                 .executes(RecallCommand::execute))));

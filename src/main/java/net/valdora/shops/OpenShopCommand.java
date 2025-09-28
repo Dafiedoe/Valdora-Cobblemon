@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -23,7 +24,7 @@ public class OpenShopCommand {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(src -> src.hasPermissionLevel(2))
+                .requires(src -> Permissions.check(src, "valdora.openshop"))
                 .then(CommandManager.literal("openshop")
                         .then(CommandManager.argument("shopid", StringArgumentType.word())
                                 .suggests(SHOP_ID_SUGGESTER)

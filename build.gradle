@@ -31,6 +31,7 @@ repositories {
 		name = "Fuzs Mod Resources"
 		url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
 	}
+	maven { url 'https://maven.nucleoid.xyz' }
 }
 
 fabricApi {
@@ -48,6 +49,7 @@ dependencies {
 	modImplementation "com.cobblemon:fabric:1.6.1+1.21.1"
 	implementation "org.jetbrains.kotlin:kotlin-stdlib:2.0.0"
 	implementation "org.jetbrains.kotlin:kotlin-reflect:2.0.0"
+	modImplementation "me.lucko:fabric-permissions-api:0.3.1"
 }
 
 processResources {

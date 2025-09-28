@@ -2,6 +2,7 @@ package net.valdora.general;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -14,7 +15,7 @@ import net.valdora.trainers.TrainerManager;
 public class ReloadModCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
-                .requires(source -> source.hasPermissionLevel(2))
+                .requires(source -> Permissions.check(source, "valdora.reload"))
                 .then(CommandManager.literal("reload")
                         .executes(ReloadModCommand::execute)));
     }
