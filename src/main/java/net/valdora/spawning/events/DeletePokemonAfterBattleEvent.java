@@ -37,10 +37,14 @@ public class DeletePokemonAfterBattleEvent {
         BattleSide secondSide = battle.getSide2();
 
         if (firstSide.getActors()[0] instanceof PokemonBattleActor pokemonBattleActor) {
-            pokemonBattleActor.getEntity().remove(Entity.RemovalReason.DISCARDED);
+            if (pokemonBattleActor.getEntity() != null) {
+                pokemonBattleActor.getEntity().remove(Entity.RemovalReason.DISCARDED);
+            }
         }
         if (secondSide.getActors()[0] instanceof PokemonBattleActor pokemonBattleActor) {
-            pokemonBattleActor.getEntity().remove(Entity.RemovalReason.DISCARDED);
+            if (pokemonBattleActor.getEntity() != null) {
+                pokemonBattleActor.getEntity().remove(Entity.RemovalReason.DISCARDED);
+            }
         }
     }
 }
