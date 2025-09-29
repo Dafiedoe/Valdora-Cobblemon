@@ -26,10 +26,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.valdora.timespecificevents.ShinyHour;
-import net.valdora.trainers.ConditionalConfigPokemon;
-import net.valdora.trainers.ConfigPokemon;
-import net.valdora.trainers.TrainerConfig;
-import net.valdora.trainers.TrainerManager;
+import net.valdora.trainers.*;
 
 import java.util.*;
 
@@ -191,8 +188,6 @@ public class PokemonUtils {
                 Valdora.LOGGER.error("Trainer " + trainer.trainerId + " has no usable Pokémon after filtering!");
             }
 
-
-
             if (trainerTeam.isEmpty()) {
                 Valdora.LOGGER.error("Trainer team is empty!");
                 player.sendMessage(Text.literal("Trainer has no Pokémon!"), false);
@@ -202,6 +197,7 @@ public class PokemonUtils {
             BattleAI battleAI = null;
             if (trainer.aiLevel >= 0) battleAI = new StrongBattleAI(trainer.aiLevel);
             else battleAI = new RandomBattleAI();
+
             PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, trainer.trainerId, trainerNpcUuid, UUID.randomUUID(), trainerTeam, battleAI);
 
             trainerTeam.forEach(p -> p.setActor(trainerActor));
@@ -215,6 +211,8 @@ public class PokemonUtils {
             }
 
             PlayerBattleActor playerActor = new PlayerBattleActor(player.getUuid(), playerTeam);
+
+            playerTeam.forEach(p -> p.setActor(playerActor));
 
             TickScheduler.runNextTick(2, () -> {
                 playerParty.toGappyList().stream()

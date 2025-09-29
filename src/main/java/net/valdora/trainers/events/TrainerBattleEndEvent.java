@@ -16,11 +16,26 @@ import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.trainers.TrainerConfig;
 import net.valdora.trainers.TrainerManager;
 import net.valdora.utils.PokemonTeamBattleActor;
+import net.valdora.utils.TickScheduler;
+
 import java.util.UUID;
 
 public class TrainerBattleEndEvent {
     public static void register() {
         CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleVictory);
+
+        /*
+        CobblemonEvents.POKEMON_SENT_PRE.subscribe(Priority.NORMAL, (event) -> {
+            TickScheduler.runNextTick(1, () -> {
+                if (event.getPokemon().getOwnerPlayer() == null) return;
+                if (event.getPokemon().getEntity() == null) {
+                    event.getPokemon().sendOut(event.getPokemon().getOwnerPlayer().getServerWorld(), event.getPosition(), null, pokemonEntity -> { return Unit.INSTANCE; });
+                }
+            });
+
+            return Unit.INSTANCE;
+        });
+         */
     }
 
     private static Unit battleVictory(BattleVictoryEvent battleVictoryEvent) {
@@ -59,9 +74,11 @@ public class TrainerBattleEndEvent {
             }
             String flag = trainer.trainerId;
             progress.setFlag(flag, status);
-            progress.addPokedollars(trainer.pokedollarReward);
-            playerActor.getEntity().sendMessage(Text.literal("You received ₽" + trainer.pokedollarReward + " for winning!"));
-            PlayerSaveDataManager.INSTANCE.saveProgress(playerActor.getEntity().getServer(), playerUuid);
+            if (playerWon) {
+                progress.addPokedollars(trainer.pokedollarReward);
+                playerActor.getEntity().sendMessage(Text.literal("You received ₽" + trainer.pokedollarReward + " for winning!"));
+                PlayerSaveDataManager.INSTANCE.saveProgress(playerActor.getEntity().getServer(), playerUuid);
+            }
 
             String command = "easy_npc dialog open " + trainerActor.getNpcUuid() + " " + playerActor.getEntity().getName().getString() + " " + flag + dialogSuffix;
             ServerCommandSource source = playerActor.getEntity().getServer().getCommandSource().withLevel(2);
