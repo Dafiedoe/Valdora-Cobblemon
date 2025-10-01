@@ -1,17 +1,24 @@
 package net.valdora;
 
+import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.valdora.battle.Generation5AI;
+import net.valdora.events.PokemonEvolutionEvent;
 import net.valdora.general.*;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.shops.ShopManager;
 import net.valdora.timespecificevents.ShinyHour;
 import net.valdora.trainers.TrainerManager;
+import net.valdora.utils.PokemonUtils;
+import net.valdora.warps.WarpManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.valdora.spawning.ModSpawning;
@@ -60,12 +67,16 @@ public class Valdora implements ModInitializer {
 		ModComponents.initialize();
 		ModBlocks.register();
 		ModBlockEntities.register();
+		WarpManager.register();
 		TrainerManager.register();
 		CheckPointManager.register();
 		ShopManager.register();
 		ShinyHour.register();
+		Generation5AI.initialiseTypeChart();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
+
+		PokemonEvolutionEvent.register();
 
 		CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
 			ReloadModCommand.register(dispatcher);
@@ -77,6 +88,9 @@ public class Valdora implements ModInitializer {
 	private void onServerTick(MinecraftServer server) {
 		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 			SurfManager.tick(player);
+			if (PokemonUtils.hasPokemon(player) && !PokemonUtils.hasPokemonAvailable(player) && !CheckPointManager.isPlayerRecalling(player)) {
+				CheckPointManager.recallPlayerToCheckPoint(player, true);
+			}
 		}
 	}
 

@@ -11,6 +11,7 @@ import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.shops.ShopManager;
 import net.valdora.spawning.SpawnPoolManager;
 import net.valdora.trainers.TrainerManager;
+import net.valdora.warps.WarpManager;
 
 public class ReloadModCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -26,6 +27,7 @@ public class ReloadModCommand {
         TrainerManager.load();
         CheckPointManager.load();
         ShopManager.load();
+        WarpManager.load();
 
         context.getSource().sendMessage(Text.literal("Valdora has been reloaded!"));
 

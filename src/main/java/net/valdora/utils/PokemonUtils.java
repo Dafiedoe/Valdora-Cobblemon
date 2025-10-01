@@ -106,6 +106,19 @@ public class PokemonUtils {
         });
     }
 
+    public static boolean hasPokemon(ServerPlayerEntity player) {
+        PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
+        boolean hasPokemon = false;
+        for (int i = 0; i < party.size(); i++) {
+            Pokemon pokemon = party.get(i);
+            if (pokemon != null) {
+                hasPokemon = true;
+                break;
+            }
+        }
+        return hasPokemon;
+    }
+
     public static boolean hasPokemonAvailable(ServerPlayerEntity player) {
         PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
         boolean hasAvailablePkmn = false;
@@ -116,7 +129,6 @@ public class PokemonUtils {
             }
         }
         if (!hasAvailablePkmn) {
-            Valdora.LOGGER.info("Player named '" + player.getName() + "' has no pokemon to battle with.");
             return false;
         }
         return true;
@@ -125,6 +137,11 @@ public class PokemonUtils {
     public static void startTrainerBattle(ServerPlayerEntity player, String trainerId, String trainerNpcUuid) {
         if (!hasPokemonAvailable(player)) {
             player.sendMessage(Text.literal("You need at least one Pokémon to battle!"), false);
+            return;
+        }
+
+        if (isPlayerInBattle(player)) {
+            Valdora.LOGGER.info(player.getName().getString() + " is already in battle!");
             return;
         }
 

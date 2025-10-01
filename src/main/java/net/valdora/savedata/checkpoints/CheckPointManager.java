@@ -33,6 +33,8 @@ public class CheckPointManager {
 
     private static final Map<String, CheckPoint> CHECKPOINTS = new HashMap<>();
 
+    private static final List<ServerPlayerEntity> recallingPlayers = new ArrayList<>();
+
     public static void register() {
         load();
 
@@ -123,7 +125,14 @@ public class CheckPointManager {
     }
 
     public static void recallPlayerToCheckPoint(ServerPlayerEntity player, boolean healPokemon) {
+        if (recallingPlayers.contains(player)) {
+            Valdora.LOGGER.info(player.getName().getString() + " is already recalling!");
+            return;
+        }
+
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
+
+        recallingPlayers.add(player);
 
         if (healPokemon) {
             TickScheduler.runNextTick(25, () -> Cobblemon.INSTANCE.getStorage().getParty(player).heal());
@@ -138,6 +147,10 @@ public class CheckPointManager {
 
             TickScheduler.runNextTick(25, () -> {
                 player.teleport(targetWorld, Valdora.WORLD_SPAWN_X, Valdora.WORLD_SPAWN_Y, Valdora.WORLD_SPAWN_Z, Valdora.WORLD_SPAWN_YAW, Valdora.WORLD_SPAWN_PITCH);
+            });
+
+            TickScheduler.runNextTick(3 * 20, () -> {
+                if (isPlayerRecalling(player)) recallingPlayers.remove(player);
             });
             return;
         }
@@ -155,8 +168,15 @@ public class CheckPointManager {
             TickScheduler.runNextTick(25, () -> {
                 player.teleport(targetWorld, cp.resetPosX, cp.resetPosY, cp.resetPosZ, cp.resetPosYaw, cp.resetPosPitch);
             });
+            TickScheduler.runNextTick(3 * 20, () -> {
+                if (isPlayerRecalling(player)) recallingPlayers.remove(player);
+            });
         } else {
             Valdora.LOGGER.warn("A world with id '" + cp.world + "' does not exist!");
         }
+    }
+
+    public static boolean isPlayerRecalling(ServerPlayerEntity player) {
+        return recallingPlayers.contains(player);
     }
 }

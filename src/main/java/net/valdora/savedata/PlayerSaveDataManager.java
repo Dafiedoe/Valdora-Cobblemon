@@ -1,6 +1,7 @@
 package net.valdora.savedata;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.api.storage.pc.PCPosition;
 import com.cobblemon.mod.common.api.storage.pc.PCStore;
@@ -116,7 +117,7 @@ public class PlayerSaveDataManager {
                             Item item = Registries.ITEM.get(Identifier.of(si.item));
                             if (item != null) {
                                 ItemStack stack = new ItemStack(item, Math.max(0, si.count));
-                                player.getInventory().setStack(i, stack);
+                                player.getInventory().setStack(si.slot, stack);
                             }
                         } catch (Exception ex) {
                             Valdora.LOGGER.error("Error restoring main inventory item: {}", ex.getMessage(), ex);
@@ -130,7 +131,7 @@ public class PlayerSaveDataManager {
                             Item item = Registries.ITEM.get(Identifier.of(si.item));
                             if (item != null) {
                                 ItemStack stack = new ItemStack(item, Math.max(0, si.count));
-                                player.getInventory().armor.set(i, stack);
+                                player.getInventory().armor.set(si.slot, stack);
                             }
                         } catch (Exception ex) {
                             Valdora.LOGGER.error("Error restoring armor item: {}", ex.getMessage(), ex);
@@ -162,6 +163,19 @@ public class PlayerSaveDataManager {
                             if (!element.isJsonNull() && element.isJsonObject()) {
                                 Pokemon pokemon = new Pokemon();
                                 pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
+                                pokemon.setIV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
+                                pokemon.setIV(Stats.SPEED, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
+                                pokemon.setIV(Stats.DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
+                                pokemon.setIV(Stats.ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
+                                pokemon.setIV(Stats.HP, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
+                                pokemon.setIV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
+
+                                pokemon.setEV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
+                                pokemon.setEV(Stats.SPEED, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
+                                pokemon.setEV(Stats.DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
+                                pokemon.setEV(Stats.ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
+                                pokemon.setEV(Stats.HP, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
+                                pokemon.setEV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
                                 party.set(slot, pokemon);
                             }
                         }
@@ -183,8 +197,22 @@ public class PlayerSaveDataManager {
                                 if (!element.isJsonNull() && element.isJsonObject()) {
                                     Pokemon pokemon = new Pokemon();
                                     pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
+
+                                    pokemon.setIV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
+                                    pokemon.setIV(Stats.SPEED, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
+                                    pokemon.setIV(Stats.DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
+                                    pokemon.setIV(Stats.ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
+                                    pokemon.setIV(Stats.HP, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
+                                    pokemon.setIV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
+
+                                    pokemon.setEV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
+                                    pokemon.setEV(Stats.SPEED, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
+                                    pokemon.setEV(Stats.DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
+                                    pokemon.setEV(Stats.ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
+                                    pokemon.setEV(Stats.HP, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
+                                    pokemon.setEV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
+
                                     pc.set(new PCPosition(boxNum, slot), pokemon);
-                                    Valdora.LOGGER.info("Setting boxNum: {}, slot: {}, pokemon: {}", boxNum, slot, pokemon.getSpecies().getName());
                                 }
                             }
                         }
@@ -295,7 +323,7 @@ public class PlayerSaveDataManager {
                 ItemStack s = player.getInventory().main.get(i);
                 if (s != null && !s.isEmpty()) {
                     Identifier id = Registries.ITEM.getId(s.getItem());
-                    mainOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                    mainOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
 
@@ -304,7 +332,7 @@ public class PlayerSaveDataManager {
                 ItemStack s = player.getInventory().armor.get(i);
                 if (s != null && !s.isEmpty()) {
                     Identifier id = Registries.ITEM.getId(s.getItem());
-                    armorOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                    armorOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
 
@@ -313,7 +341,7 @@ public class PlayerSaveDataManager {
                 ItemStack s = player.getInventory().offHand.get(i);
                 if (s != null && !s.isEmpty()) {
                     Identifier id = Registries.ITEM.getId(s.getItem());
-                    offOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount()));
+                    offOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
 
@@ -426,7 +454,13 @@ public class PlayerSaveDataManager {
                             else if (cnt != null) {
                                 try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
                             }
-                            if (!id.isEmpty()) main.add(new PlayerStoryProgress.SimpleItem(id, count));
+                            int slot = 0;
+                            Object slotObj = m.get("slot");
+                            if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
+                            else if (slotObj != null) {
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                            }
+                            if (!id.isEmpty()) main.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
 
@@ -443,7 +477,13 @@ public class PlayerSaveDataManager {
                             else if (cnt != null) {
                                 try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
                             }
-                            if (!id.isEmpty()) armor.add(new PlayerStoryProgress.SimpleItem(id, count));
+                            int slot = 0;
+                            Object slotObj = m.get("slot");
+                            if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
+                            else if (slotObj != null) {
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                            }
+                            if (!id.isEmpty()) armor.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
 
@@ -460,7 +500,13 @@ public class PlayerSaveDataManager {
                             else if (cnt != null) {
                                 try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
                             }
-                            if (!id.isEmpty()) offhand.add(new PlayerStoryProgress.SimpleItem(id, count));
+                            int slot = 0;
+                            Object slotObj = m.get("slot");
+                            if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
+                            else if (slotObj != null) {
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                            }
+                            if (!id.isEmpty()) offhand.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
                 }
@@ -818,10 +864,12 @@ public class PlayerSaveDataManager {
         public static class SimpleItem {
             public String item;
             public int count;
+            public int slot;
 
-            public SimpleItem(String item, int count) {
+            public SimpleItem(String item, int count, int slot) {
                 this.item = item;
                 this.count = count;
+                this.slot = slot;
             }
         }
     }
