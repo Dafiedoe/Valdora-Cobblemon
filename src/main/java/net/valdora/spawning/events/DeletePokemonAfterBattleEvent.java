@@ -9,6 +9,7 @@ import com.cobblemon.mod.common.battles.BattleSide;
 import com.cobblemon.mod.common.battles.actor.PokemonBattleActor;
 import kotlin.Unit;
 import net.minecraft.entity.Entity;
+import net.valdora.utils.PokemonTeamBattleActor;
 
 public class DeletePokemonAfterBattleEvent {
     public static void register() {
@@ -21,7 +22,7 @@ public class DeletePokemonAfterBattleEvent {
 
         battleEnd(battle);
 
-        return null;
+        return Unit.INSTANCE;
     }
 
     private static Unit battleFaint(BattleFaintedEvent battleFaintedEvent) {
@@ -29,12 +30,23 @@ public class DeletePokemonAfterBattleEvent {
 
         battleEnd(battle);
 
-        return null;
+        return Unit.INSTANCE;
     }
 
     private static void battleEnd(PokemonBattle battle) {
         BattleSide firstSide = battle.getSide1();
         BattleSide secondSide = battle.getSide2();
+
+        if (firstSide.getActors()[0] instanceof PokemonTeamBattleActor teamBattleActor) {
+            if (teamBattleActor.getEntity() != null) {
+                teamBattleActor.getEntity().discard();
+            }
+        }
+        if (secondSide.getActors()[0] instanceof PokemonTeamBattleActor teamBattleActor) {
+            if (teamBattleActor.getEntity() != null) {
+                teamBattleActor.getEntity().discard();
+            }
+        }
 
         if (firstSide.getActors()[0] instanceof PokemonBattleActor pokemonBattleActor) {
             if (pokemonBattleActor.getEntity() != null) {

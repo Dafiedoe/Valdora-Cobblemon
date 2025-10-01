@@ -1,4 +1,4 @@
-package net.valdora.utils;
+package net.valdora.battle;
 
 import com.cobblemon.mod.common.api.battles.model.actor.AIBattleActor;
 import com.cobblemon.mod.common.api.battles.model.actor.ActorType;
@@ -18,19 +18,21 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.UUID;
 
-public class PokemonTeamBattleActor extends AIBattleActor implements EntityBackedBattleActor<LivingEntity>, FleeableBattleActor {
+public class EntityBackedTrainerBattleActor extends AIBattleActor implements EntityBackedBattleActor<LivingEntity>, FleeableBattleActor {
     private final String name;
-    private final String id;
-    private final String npcUuid;
     private final LivingEntity entity;
     private final ServerWorld world;
     private final Vec3d pos;
 
-    public PokemonTeamBattleActor(String name, String id, String npcUuid, @NotNull UUID uuid, @NotNull List<BattlePokemon> pokemonList, @NotNull BattleAI battleAI, LivingEntity entity) {
-        super(uuid, pokemonList, battleAI);
+    public EntityBackedTrainerBattleActor(
+            String name,
+            UUID uuid,
+            List<BattlePokemon> pokemon,
+            BattleAI battleAI,
+            LivingEntity entity
+    ) {
+        super(uuid, pokemon, battleAI);
         this.name = name;
-        this.id = id;
-        this.npcUuid = npcUuid;
         this.entity = entity;
         this.world = (ServerWorld) entity.getWorld();
         this.pos = entity.getPos();
@@ -55,16 +57,8 @@ public class PokemonTeamBattleActor extends AIBattleActor implements EntityBacke
 
     @NotNull
     @Override
-    public MutableText nameOwned(@NotNull String pokemonName) {
-        return Text.literal(this.name + "'s " + pokemonName);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getNpcUuid() {
-        return npcUuid;
+    public MutableText nameOwned(@NotNull String s) {
+        return Text.literal(s).append(getName());
     }
 
     @Nullable

@@ -4,14 +4,17 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.entity.BoatEntityRenderer;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.Identifier;
 import net.valdora.general.ModBlockEntities;
 import net.valdora.general.ModBlocks;
+import net.valdora.general.ModEntities;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.flaggedbarrier.ClientPlayerFlagCache;
 import net.valdora.savedata.flaggedbarrier.FlaggedBarrierEntityRenderer;
@@ -21,10 +24,14 @@ import net.valdora.savedata.profiles.ProfileScreen;
 import net.valdora.shops.ConfigShop;
 import net.valdora.shops.OpenShopS2CPayload;
 import net.valdora.shops.ShopScreen;
+import net.valdora.trainers.DummyModel;
+import net.valdora.trainers.DummyRenderer;
 
 import static net.valdora.general.ModEntities.SURF_BOARD;
 
 public class ValdoraClient implements ClientModInitializer {
+    public static final EntityModelLayer DUMMY_LAYER = new EntityModelLayer(Identifier.of(Valdora.MOD_ID, "dummy"), "main");
+
     @Override
     public void onInitializeClient() {
         // Register surf board entity renderer
@@ -86,5 +93,8 @@ public class ValdoraClient implements ClientModInitializer {
                 client.setScreen(screen);
             });
         });
+
+        EntityRendererRegistry.register(ModEntities.DUMMY_ENTITY, DummyRenderer::new);
+        EntityModelLayerRegistry.registerModelLayer(DUMMY_LAYER, DummyModel::getTexturedModelData);
     }
 }

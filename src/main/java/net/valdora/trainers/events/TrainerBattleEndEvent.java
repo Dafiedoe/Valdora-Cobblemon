@@ -16,26 +16,12 @@ import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.trainers.TrainerConfig;
 import net.valdora.trainers.TrainerManager;
 import net.valdora.utils.PokemonTeamBattleActor;
-import net.valdora.utils.TickScheduler;
 
 import java.util.UUID;
 
 public class TrainerBattleEndEvent {
     public static void register() {
         CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleVictory);
-
-        /*
-        CobblemonEvents.POKEMON_SENT_PRE.subscribe(Priority.NORMAL, (event) -> {
-            TickScheduler.runNextTick(1, () -> {
-                if (event.getPokemon().getOwnerPlayer() == null) return;
-                if (event.getPokemon().getEntity() == null) {
-                    event.getPokemon().sendOut(event.getPokemon().getOwnerPlayer().getServerWorld(), event.getPosition(), null, pokemonEntity -> { return Unit.INSTANCE; });
-                }
-            });
-
-            return Unit.INSTANCE;
-        });
-         */
     }
 
     private static Unit battleVictory(BattleVictoryEvent battleVictoryEvent) {
@@ -88,8 +74,10 @@ public class TrainerBattleEndEvent {
             } catch (Exception e) {
                 Valdora.LOGGER.error("Failed to execute command: {}", command, e);
             }
+
+            trainerActor.getEntity().discard();
         }
 
-        return null;
+        return Unit.INSTANCE;
     }
 }

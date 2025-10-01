@@ -485,8 +485,8 @@ public class PlayerSaveDataManager {
 
                 int pokedollars = 0;
                 Object pokedollarsObj = json.get("pokedollars");
-                if (pokedollarsObj instanceof Integer) {
-                    pokedollars = (int) pokedollarsObj;
+                if (pokedollarsObj instanceof Double) {
+                    pokedollars = (int) Math.floor((Double) pokedollarsObj);
                 }
 
                 return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars);

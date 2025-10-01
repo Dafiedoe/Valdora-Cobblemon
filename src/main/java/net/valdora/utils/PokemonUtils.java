@@ -12,11 +12,18 @@ import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.*;
 import kotlin.Unit;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.biome.Biome;
+import net.valdora.battle.AbstractPlayerBattleParticipant;
+import net.valdora.battle.AbstractTrainerBattle;
+import net.valdora.battle.AbstractTrainerBattleParticipant;
+import net.valdora.battle.TrainerBattle;
+import net.valdora.battle.exception.BattleStartException;
+import net.valdora.general.ModEntities;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
 import net.valdora.Valdora;
@@ -123,6 +130,25 @@ public class PokemonUtils {
 
         TrainerConfig trainer = TrainerManager.getTrainerById(trainerId);
 
+        DummyEntity dummy = new DummyEntity(ModEntities.DUMMY_ENTITY, player.getWorld());
+        dummy.setPos(Math.floor(player.getX()) + 0.5, Math.floor(player.getY()) + 0.5, Math.floor(player.getZ()) + 0.5);
+        player.getServerWorld().spawnEntity(dummy);
+
+        TickScheduler.runNextTick(1, () -> {
+            try {
+                TrainerBattle trainerBattle = new AbstractTrainerBattle(
+                        new AbstractPlayerBattleParticipant(player, Cobblemon.INSTANCE.getStorage().getParty(player)),
+                        new AbstractTrainerBattleParticipant(trainer, player, dummy, trainerNpcUuid)
+                );
+
+                trainerBattle.start();
+            } catch (BattleStartException e) {
+                return;
+            }
+        });
+
+        /*
+
         if (trainer == null) {
             player.sendMessage(Text.literal("Invalid trainer id"));
             return;
@@ -195,10 +221,14 @@ public class PokemonUtils {
             }
 
             BattleAI battleAI = null;
-            if (trainer.aiLevel >= 0) battleAI = new StrongBattleAI(trainer.aiLevel);
-            else battleAI = new RandomBattleAI();
+            //if (trainer.aiLevel >= 0) battleAI = new StrongBattleAI(trainer.aiLevel);
+            //else battleAI = new RandomBattleAI();
 
-            PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, trainer.trainerId, trainerNpcUuid, UUID.randomUUID(), trainerTeam, battleAI);
+            LivingEntity dummy = new DummyEntity(ModEntities.DUMMY_ENTITY, player.getWorld());
+            dummy.setPos(player.getX(), player.getY(), player.getZ());
+            player.getServerWorld().spawnEntity(dummy);
+
+            PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, trainer.trainerId, trainerNpcUuid, UUID.randomUUID(), trainerTeam, battleAI, dummy, player);
 
             trainerTeam.forEach(p -> p.setActor(trainerActor));
 
@@ -244,6 +274,7 @@ public class PokemonUtils {
             e.printStackTrace();
             player.sendMessage(Text.literal("An error occurred while starting the battle."), false);
         }
+         */
     }
 
     public static boolean rollForShiny(ServerPlayerEntity player) {
