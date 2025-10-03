@@ -8,6 +8,6 @@ public class TrainerConfig {
     public String battleFormat;
     public List<ConfigPokemon> pokemonTeam;
     public String aiLevel;
-    public float xpMultiplier;
+    public double xpMultiplier;
     public int pokedollarReward;
 }

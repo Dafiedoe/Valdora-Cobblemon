@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.valdora.areanotifications.AreaNotificationManager;
 import net.valdora.battle.Generation5AI;
 import net.valdora.events.PokemonEvolutionEvent;
 import net.valdora.general.*;
@@ -72,6 +73,8 @@ public class Valdora implements ModInitializer {
 		CheckPointManager.register();
 		ShopManager.register();
 		ShinyHour.register();
+		AreaNotificationManager.register();
+
 		Generation5AI.initialiseTypeChart();
 
 		ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);

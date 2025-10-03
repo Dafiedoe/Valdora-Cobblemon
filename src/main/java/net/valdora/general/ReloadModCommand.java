@@ -7,6 +7,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.valdora.Valdora;
+import net.valdora.areanotifications.AreaNotificationManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.shops.ShopManager;
 import net.valdora.spawning.SpawnPoolManager;
@@ -28,6 +29,7 @@ public class ReloadModCommand {
         CheckPointManager.load();
         ShopManager.load();
         WarpManager.load();
+        AreaNotificationManager.load();
 
         context.getSource().sendMessage(Text.literal("Valdora has been reloaded!"));
 

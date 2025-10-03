@@ -12,6 +12,7 @@ import net.minecraft.client.render.entity.BoatEntityRenderer;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.Identifier;
+import net.valdora.areanotifications.ClientAreaNotificationHandler;
 import net.valdora.general.ModBlockEntities;
 import net.valdora.general.ModBlocks;
 import net.valdora.general.ModEntities;
@@ -96,5 +97,7 @@ public class ValdoraClient implements ClientModInitializer {
 
         EntityRendererRegistry.register(ModEntities.DUMMY_ENTITY, DummyRenderer::new);
         EntityModelLayerRegistry.registerModelLayer(DUMMY_LAYER, DummyModel::getTexturedModelData);
+
+        ClientAreaNotificationHandler.register();
     }
 }

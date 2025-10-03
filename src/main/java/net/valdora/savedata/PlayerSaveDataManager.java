@@ -535,7 +535,13 @@ public class PlayerSaveDataManager {
                     pokedollars = (int) Math.floor((Double) pokedollarsObj);
                 }
 
-                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars);
+                String area = "";
+                Object areaObj = json.get("lastvisitedarea");
+                if (areaObj instanceof String) {
+                    area = (String) areaObj;
+                }
+
+                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
             }
@@ -569,6 +575,8 @@ public class PlayerSaveDataManager {
             json.put("lastcheckpoint", progress.getLastCheckPoint());
 
             json.put("pokedollars", progress.getPokedollars());
+
+            json.put("lastvisitedarea", progress.getLastAreaVisited());
 
             gson.toJson(json, writer);
         } catch (IOException e) {
@@ -752,11 +760,13 @@ public class PlayerSaveDataManager {
         private String pc;
         private String lastCheckPoint;
         private int pokedollars;
+        private String lastAreaVisited;
 
         public PlayerStoryProgress() {}
 
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
-                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars) {
+                                   List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars,
+                                    String lastAreaVisited) {
             this.flags.putAll(flags);
             this.x = x;
             this.y = y;
@@ -770,6 +780,7 @@ public class PlayerSaveDataManager {
             this.pc = pc;
             this.lastCheckPoint = cp;
             this.pokedollars = pokedollars;
+            this.lastAreaVisited = lastAreaVisited;
         }
 
         public boolean checkFlag(String flag, String value) {
@@ -804,6 +815,8 @@ public class PlayerSaveDataManager {
         public String getLastCheckPoint() { return lastCheckPoint; }
 
         public int getPokedollars() { return pokedollars; }
+
+        public String getLastAreaVisited() { return lastAreaVisited; }
 
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
@@ -859,6 +872,10 @@ public class PlayerSaveDataManager {
 
         public boolean hasEnoughPokedollars(int amount) {
             return pokedollars >= amount;
+        }
+
+        public void setLastAreaVisited(String area) {
+            lastAreaVisited = area;
         }
 
         public static class SimpleItem {
