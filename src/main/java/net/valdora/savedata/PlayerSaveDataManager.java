@@ -31,7 +31,12 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.math.Vec3d;
 import net.valdora.Valdora;
+import net.valdora.quests.ActiveQuest;
+import net.valdora.quests.Quest;
+import net.valdora.quests.QuestManager;
+import net.valdora.quests.objectivetypes.ReachLocationObjective;
 import net.valdora.savedata.flaggedbarrier.PlayerFlagsS2CPayload;
 
 import java.io.*;
@@ -214,6 +219,19 @@ public class PlayerSaveDataManager {
 
                                     pc.set(new PCPosition(boxNum, slot), pokemon);
                                 }
+                            }
+                        }
+                    }
+
+                    if (!progress.getTrackingQuest().isEmpty()) {
+                        Quest quest = QuestManager.getQuestById(progress.getTrackingQuest());
+                        ActiveQuest activeQuest = progress.getActiveQuestById(progress.getTrackingQuest());
+                        if (quest != null && activeQuest != null) {
+                            QuestManager.sendQuestHudUpdate(player, quest, activeQuest.objectiveIndex, activeQuest.count, quest.getObjectiveByIndex(activeQuest.objectiveIndex).count);
+                            if (quest.getObjectives().get(activeQuest.objectiveIndex) instanceof ReachLocationObjective reachLocationObjective) {
+                                QuestManager.sendCompassUpdate(player, new Vec3d(reachLocationObjective.x, reachLocationObjective.y, reachLocationObjective.z), reachLocationObjective.showCompass);
+                            } else {
+                                QuestManager.sendCompassUpdate(player, Vec3d.ZERO, false);
                             }
                         }
                     }
@@ -541,7 +559,59 @@ public class PlayerSaveDataManager {
                     area = (String) areaObj;
                 }
 
-                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area);
+                List<String> completedQuests = new ArrayList<>();
+                Object completedQuestsObj = json.get("completedQuests");
+                if (completedQuestsObj instanceof List) {
+                    for (Object entry: (List<?>) completedQuestsObj) {
+                        String value = "";
+                        if (entry instanceof String) {
+                            value = (String) entry;
+                        } else if (entry != null) {
+                            value = entry.toString();
+                        }
+                        if (!value.isEmpty()) {
+                            completedQuests.add(value);
+                        }
+                    }
+                }
+
+                List<ActiveQuest> activeQuests = new ArrayList<>();
+                Object activeQuestsObj = json.get("activeQuests");
+                if (activeQuestsObj instanceof List) {
+                    for (Object entry : (List<?>) activeQuestsObj) {
+                        if (!(entry instanceof Map)) continue;
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> m = (Map<String, Object>) entry;
+
+                        String questId = m.getOrDefault("questId", "").toString();
+
+                        int objectiveIndex = 0;
+                        Object objIndexObj = m.get("objectiveIndex");
+                        if (objIndexObj instanceof Number) objectiveIndex = ((Number) objIndexObj).intValue();
+                        else if (objIndexObj != null) {
+                            try { objectiveIndex = Integer.parseInt(objIndexObj.toString()); } catch (Exception ignored) {}
+                        }
+
+                        int count = 0;
+                        Object countObj = m.get("count");
+                        if (countObj instanceof Number) count = ((Number) countObj).intValue();
+                        else if (countObj != null) {
+                            try { count = Integer.parseInt(countObj.toString()); } catch (Exception ignored) {}
+                        }
+
+                        if (!questId.isEmpty()) {
+                            activeQuests.add(new ActiveQuest(questId, objectiveIndex, count));
+                        }
+                    }
+                }
+
+                String trackingQuest = "";
+                Object trackingQuestObj = json.get("trackingQuest");
+                if (trackingQuestObj instanceof String) {
+                    trackingQuest = (String) trackingQuestObj;
+                }
+
+                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area, completedQuests, activeQuests, trackingQuest);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
             }
@@ -577,6 +647,10 @@ public class PlayerSaveDataManager {
             json.put("pokedollars", progress.getPokedollars());
 
             json.put("lastvisitedarea", progress.getLastAreaVisited());
+
+            json.put("completedQuests", progress.getCompletedQuests());
+            json.put("activeQuests", progress.getActiveQuests());
+            json.put("trackingQuest", progress.getTrackingQuest());
 
             gson.toJson(json, writer);
         } catch (IOException e) {
@@ -761,12 +835,17 @@ public class PlayerSaveDataManager {
         private String lastCheckPoint;
         private int pokedollars;
         private String lastAreaVisited;
+        private List<String> completedQuests;
+        private List<ActiveQuest> activeQuests;
+        private String trackingQuest;
 
-        public PlayerStoryProgress() {}
+        public PlayerStoryProgress() {
+            trackingQuest = "";
+        }
 
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
                                    List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars,
-                                    String lastAreaVisited) {
+                                    String lastAreaVisited, List<String> completedQuests, List<ActiveQuest> activeQuests, String trackingQuest) {
             this.flags.putAll(flags);
             this.x = x;
             this.y = y;
@@ -781,6 +860,9 @@ public class PlayerSaveDataManager {
             this.lastCheckPoint = cp;
             this.pokedollars = pokedollars;
             this.lastAreaVisited = lastAreaVisited;
+            this.completedQuests = completedQuests;
+            this.activeQuests = activeQuests;
+            this.trackingQuest = trackingQuest;
         }
 
         public boolean checkFlag(String flag, String value) {
@@ -817,6 +899,28 @@ public class PlayerSaveDataManager {
         public int getPokedollars() { return pokedollars; }
 
         public String getLastAreaVisited() { return lastAreaVisited; }
+
+        public List<String> getCompletedQuests() { return completedQuests; }
+
+        public boolean hasCompletedQuest(String id) {
+            for (String quest : completedQuests) {
+                if (quest.equals(id)) return true;
+            }
+            return false;
+        }
+
+        public List<ActiveQuest> getActiveQuests() { return activeQuests; }
+
+        public ActiveQuest getActiveQuestById(String id) {
+            for (ActiveQuest quest : activeQuests) {
+                if (quest.questId.equals(id)) {
+                    return quest;
+                }
+            }
+            return null;
+        }
+
+        public String getTrackingQuest() { return trackingQuest; }
 
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
@@ -876,6 +980,42 @@ public class PlayerSaveDataManager {
 
         public void setLastAreaVisited(String area) {
             lastAreaVisited = area;
+        }
+
+        public void addCompletedQuest(String id) {
+            if (hasCompletedQuest(id)) {
+                Valdora.LOGGER.info("Quest with id: '" + id + "' is already completed!");
+                return;
+            }
+
+            if (getTrackingQuest().equals(id)) {
+                trackingQuest = "";
+            }
+
+            activeQuests.remove(getActiveQuestById(id));
+            completedQuests.add(id);
+        }
+
+        public void addActiveQuest(ActiveQuest quest) {
+            if (getActiveQuestById(quest.questId) != null) {
+                Valdora.LOGGER.info("This player already has this quest!");
+                return;
+            }
+            activeQuests.add(quest);
+        }
+
+        public void setTrackingQuest(ServerPlayerEntity player, Quest quest) {
+            trackingQuest = quest.id;
+
+            ActiveQuest activeQuest = getActiveQuestById(quest.id);
+            if (activeQuest == null) return;
+
+            QuestManager.sendQuestHudUpdate(player, quest, activeQuest.objectiveIndex, activeQuest.count, quest.getObjectiveByIndex(activeQuest.objectiveIndex).count);
+            if (quest.getObjectives().get(activeQuest.objectiveIndex) instanceof ReachLocationObjective reachLocationObjective) {
+                QuestManager.sendCompassUpdate(player, new Vec3d(reachLocationObjective.x, reachLocationObjective.y, reachLocationObjective.z), reachLocationObjective.showCompass);
+            } else {
+                QuestManager.sendCompassUpdate(player, Vec3d.ZERO, false);
+            }
         }
 
         public static class SimpleItem {
