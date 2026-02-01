@@ -1,18 +1,22 @@
 package net.valdora;
 
-import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.google.gson.*;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import net.valdora.areanotifications.AreaNotificationManager;
 import net.valdora.battle.Generation5AI;
 import net.valdora.events.PokemonEvolutionEvent;
 import net.valdora.general.*;
+import net.valdora.items.repel.RepelItem;
+import net.valdora.items.repel.RepelManager;
+import net.valdora.quests.ActiveQuest;
+import net.valdora.quests.Quest;
+import net.valdora.quests.QuestManager;
+import net.valdora.quests.objectivetypes.ReachLocationObjective;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.shops.ShopManager;
@@ -55,6 +59,8 @@ public class Valdora implements ModInitializer {
 	public static int SHINY_TIME_MULTIPLIER = 8;
 	public static int SHINY_SUNDAY_MULTIPLIER = 2;
 
+	private static boolean reloadQuestHud = false;
+
 	@Override
 	public void onInitialize() {
 		LOGGER.info("[Valdora] Initializing mod");
@@ -68,12 +74,16 @@ public class Valdora implements ModInitializer {
 		ModComponents.initialize();
 		ModBlocks.register();
 		ModBlockEntities.register();
+		ModItems.register();
+		ModItemGroups.register();
 		WarpManager.register();
 		TrainerManager.register();
+		QuestManager.register();
 		CheckPointManager.register();
 		ShopManager.register();
 		ShinyHour.register();
 		AreaNotificationManager.register();
+		RepelManager.register();
 
 		Generation5AI.initialiseTypeChart();
 
@@ -94,7 +104,11 @@ public class Valdora implements ModInitializer {
 			if (PokemonUtils.hasPokemon(player) && !PokemonUtils.hasPokemonAvailable(player) && !CheckPointManager.isPlayerRecalling(player)) {
 				CheckPointManager.recallPlayerToCheckPoint(player, true);
 			}
+			if (reloadQuestHud) {
+				reloadQuestHudForPlayer(player);
+			}
 		}
+		reloadQuestHud = false;
 	}
 
 	/**
@@ -123,6 +137,9 @@ public class Valdora implements ModInitializer {
 	 *   "shiny_time_start_time_m": 0,                 // Minute for shiny event start time
 	 *   "shiny_time_duration": 60,                    // Duration of shiny event in minutes
 	 *   "shiny_time_interval": 720                    // Interval between shiny events in minutes
+	 *   "default_repel_distance": 100                 // Distance of default repel
+	 *   "super_repel_distance": 200                   // Distance of super repel
+	 *   "max_repel_distance": 250                     // Distance of max repel
 	 * }
 	 */
 	public static void loadConfig() {
@@ -217,9 +234,41 @@ public class Valdora implements ModInitializer {
 				ShinyHour.EVENT_INTERVAL_MINUTES = cfg.get("shiny_time_interval").getAsInt();
 			}
 
+			if (cfg.has("default_repel_distance")) {
+				RepelItem.DEFAULT_STEPS = cfg.get("default_repel_distance").getAsInt();
+			}
+
+			if (cfg.has("super_repel_distance")) {
+				RepelItem.SUPER_STEPS = cfg.get("super_repel_distance").getAsInt();
+			}
+
+			if (cfg.has("max_repel_distance")) {
+				RepelItem.MAX_STEPS = cfg.get("max_repel_distance").getAsInt();
+			}
+
 			LOGGER.info("[Valdora] Config loaded successfully");
 		} catch (IOException | JsonSyntaxException e) {
 			LOGGER.error("[Valdora] Failed to load config", e);
+		}
+	}
+
+	public static void reloadPlayerQuestHud() {
+		reloadQuestHud = true;
+	}
+
+	private static void reloadQuestHudForPlayer(ServerPlayerEntity player) {
+		PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
+		if (progress != null) {
+			Quest quest = QuestManager.getQuestById(progress.getTrackingQuest());
+			ActiveQuest activeQuest = progress.getActiveQuestById(progress.getTrackingQuest());
+			if (quest != null && activeQuest != null) {
+				QuestManager.sendQuestHudUpdate(player, quest, activeQuest.objectiveIndex, activeQuest.count, quest.getObjectiveByIndex(activeQuest.objectiveIndex).count);
+				if (quest.getObjectiveByIndex(activeQuest.objectiveIndex) instanceof ReachLocationObjective reachLocationObjective) {
+					QuestManager.sendCompassUpdate(player, new Vec3d(reachLocationObjective.x, reachLocationObjective.y, reachLocationObjective.z), reachLocationObjective.showCompass);
+				} else {
+					QuestManager.sendCompassUpdate(player, player.getPos(), false);
+				}
+			}
 		}
 	}
 }

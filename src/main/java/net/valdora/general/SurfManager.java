@@ -23,7 +23,7 @@ public class SurfManager {
     public static void tick(ServerPlayerEntity player) {
         World world = player.getWorld();
 
-        boolean inWater = isPlayerInWater(player);
+        boolean inWater = player.isTouchingWater();
         boolean hasSurfHM = PokemonPartyApi.hasSurf(player);
 
         // prevent entering water without Surf HM
@@ -83,9 +83,7 @@ public class SurfManager {
     }
 
     private static boolean isPlayerInWater(ServerPlayerEntity player) {
-        return player.getWorld()
-                .getFluidState(player.getBlockPos().down())
-                .isIn(FluidTags.WATER);
+        return player.isTouchingWater();
     }
 
     private static BlockPos findWaterSurfacePos(World world, BlockPos origin) {
@@ -124,7 +122,12 @@ public class SurfManager {
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
             if (!world.getFluidState(pos).isIn(FluidTags.WATER) && !world.getBlockState(pos).isAir()) {
-                return pos.up();
+                BlockPos above = pos.up();
+                BlockPos head = above.up();
+                if (!world.getFluidState(above).isIn(FluidTags.WATER) && world.getBlockState(above).isAir() &&
+                        !world.getFluidState(head).isIn(FluidTags.WATER) && world.getBlockState(head).isAir()) {
+                    return above;
+                }
             }
             if (pos.getManhattanDistance(origin) >= LAND_SEARCH_RADIUS) continue;
             for (Direction dir : Direction.values()) {

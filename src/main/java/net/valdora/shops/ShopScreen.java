@@ -69,7 +69,7 @@ public class ShopScreen extends Screen {
                     .dimensions(x + panelWidth - 76, y + panelHeight - 30, 60, 20).build());
         }
         else {
-            this.addDrawableChild(ButtonWidget.builder(Text.literal("Close"), (b) -> this.client.setScreen(null))
+            this.addDrawableChild(ButtonWidget.builder(Text.literal("Close"), (b) -> this.client.player.closeHandledScreen())
                     .dimensions(this.width - 80, this.height - 30, 70, 20).build());
         }
     }

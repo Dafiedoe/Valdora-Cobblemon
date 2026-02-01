@@ -1,5 +1,6 @@
 package net.valdora.spawning.events;
 
+import net.valdora.items.repel.RepelManager;
 import net.valdora.spawning.BiomeSpawnSettings;
 import net.valdora.spawning.SpawnPoolManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -28,6 +29,8 @@ public class TallGrassWalkEvent {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                if (RepelManager.hasRepel(player)) continue;
+
                 Vec3d pos = player.getPos();
                 BlockPos blockPos = BlockPos.ofFloored(pos);
                 World world = player.getWorld();
