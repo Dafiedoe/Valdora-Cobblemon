@@ -11,6 +11,8 @@ import kotlin.Unit;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.valdora.Valdora;
+import net.valdora.quests.ObjectiveType;
+import net.valdora.quests.QuestManager;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.checkpoints.CheckPointManager;
 import net.valdora.trainers.TrainerConfig;
@@ -64,6 +66,8 @@ public class TrainerBattleEndEvent {
                 progress.addPokedollars(trainer.pokedollarReward);
                 playerActor.getEntity().sendMessage(Text.literal("You received ₽" + trainer.pokedollarReward + " for winning!"));
                 PlayerSaveDataManager.INSTANCE.saveProgress(playerActor.getEntity().getServer(), playerUuid);
+
+                QuestManager.updateQuestProgress(playerActor.getEntity(), ObjectiveType.DEFEAT_TRAINER, trainer);
             }
 
             String command = "easy_npc dialog open " + trainerActor.getNpcUuid() + " " + playerActor.getEntity().getName().getString() + " " + flag + dialogSuffix;

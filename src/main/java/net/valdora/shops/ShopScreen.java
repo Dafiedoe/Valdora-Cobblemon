@@ -292,8 +292,10 @@ public class ShopScreen extends Screen {
 
         PurchaseC2SPayload payload = new PurchaseC2SPayload(shopConfig.id, selectedItem.item, purchaseAmount);
         ClientPlayNetworking.send(payload);
-
-        setPlayerPokedollars(playerPokedollars - (selectedItem.cost * purchaseAmount));
+        
+        if (playerPokedollars > (selectedItem.cost * purchaseAmount)) {
+            setPlayerPokedollars(playerPokedollars - (selectedItem.cost * purchaseAmount));
+        }
 
         closePurchaseOverlay();
     }

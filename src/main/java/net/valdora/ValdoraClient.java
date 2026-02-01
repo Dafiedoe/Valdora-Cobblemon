@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.entity.BoatEntityRenderer;
@@ -16,6 +17,10 @@ import net.valdora.areanotifications.ClientAreaNotificationHandler;
 import net.valdora.general.ModBlockEntities;
 import net.valdora.general.ModBlocks;
 import net.valdora.general.ModEntities;
+import net.valdora.quests.hud.CompassHudClient;
+import net.valdora.quests.hud.CompassHudRenderer;
+import net.valdora.quests.hud.QuestHudClient;
+import net.valdora.quests.hud.QuestHudRenderer;
 import net.valdora.savedata.PlayerSaveDataManager;
 import net.valdora.savedata.flaggedbarrier.ClientPlayerFlagCache;
 import net.valdora.savedata.flaggedbarrier.FlaggedBarrierEntityRenderer;
@@ -99,5 +104,10 @@ public class ValdoraClient implements ClientModInitializer {
         EntityModelLayerRegistry.registerModelLayer(DUMMY_LAYER, DummyModel::getTexturedModelData);
 
         ClientAreaNotificationHandler.register();
+
+        QuestHudClient.register();
+        HudRenderCallback.EVENT.register(new QuestHudRenderer());
+        CompassHudClient.register();
+        HudRenderCallback.EVENT.register(new CompassHudRenderer());
     }
 }
