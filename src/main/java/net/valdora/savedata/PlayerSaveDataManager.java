@@ -610,8 +610,20 @@ public class PlayerSaveDataManager {
                 if (trackingQuestObj instanceof String) {
                     trackingQuest = (String) trackingQuestObj;
                 }
+                
+                float repelSteps = 0f;
+                Object repelStepsObj = json.get("repelSteps");
+                if (repelStepsObj instanceof Float) {
+                    repelSteps = (Float) repelStepsObj;
+                }
+                
+                boolean adminRepel = false;
+                Object adminRepelObj = json.get("adminRepel");
+                if (adminRepelObj instanceof Boolean) {
+                    adminRepel = (Boolean) adminRepelObj;
+                }
 
-                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area, completedQuests, activeQuests, trackingQuest);
+                return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area, completedQuests, activeQuests, trackingQuest, repelSteps, adminRepel);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
             }
@@ -651,6 +663,9 @@ public class PlayerSaveDataManager {
             json.put("completedQuests", progress.getCompletedQuests());
             json.put("activeQuests", progress.getActiveQuests());
             json.put("trackingQuest", progress.getTrackingQuest());
+            
+            json.put("repelSteps", progress.getRepelSteps());
+            json.put("adminRepel", progress.getAdminRepel());
 
             gson.toJson(json, writer);
         } catch (IOException e) {
@@ -838,6 +853,8 @@ public class PlayerSaveDataManager {
         private List<String> completedQuests;
         private List<ActiveQuest> activeQuests;
         private String trackingQuest;
+        private float repelSteps;
+        private boolean adminRepel;
 
         public PlayerStoryProgress() {
             trackingQuest = "";
@@ -845,7 +862,8 @@ public class PlayerSaveDataManager {
 
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
                                    List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars,
-                                    String lastAreaVisited, List<String> completedQuests, List<ActiveQuest> activeQuests, String trackingQuest) {
+                                    String lastAreaVisited, List<String> completedQuests, List<ActiveQuest> activeQuests, String trackingQuest, float repelSteps,
+                                   boolean adminRepel) {
             this.flags.putAll(flags);
             this.x = x;
             this.y = y;
@@ -863,6 +881,8 @@ public class PlayerSaveDataManager {
             this.completedQuests = completedQuests;
             this.activeQuests = activeQuests;
             this.trackingQuest = trackingQuest;
+            this.repelSteps = repelSteps;
+            this.adminRepel = adminRepel;
         }
 
         public boolean checkFlag(String flag, String value) {
@@ -922,6 +942,10 @@ public class PlayerSaveDataManager {
 
         public String getTrackingQuest() { return trackingQuest; }
 
+        public float getRepelSteps() { return repelSteps; }
+        
+        public boolean getAdminRepel() { return adminRepel; }
+
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
         }
@@ -933,7 +957,7 @@ public class PlayerSaveDataManager {
         public List<SimpleItem> getOffhandItems() {
             return new ArrayList<>(offhand);
         }
-
+        
         public void setMainItems(List<SimpleItem> items) {
             main.clear();
             if (items != null) main.addAll(items);
@@ -1016,6 +1040,18 @@ public class PlayerSaveDataManager {
             } else {
                 QuestManager.sendCompassUpdate(player, Vec3d.ZERO, false);
             }
+        }
+        
+        public void setRepelSteps(float steps) {
+            repelSteps = steps;
+        }
+
+        public void addRepelSteps(float amount) {
+            repelSteps += amount;
+        }
+        
+        public void toggleAdminRepel() {
+            adminRepel = !adminRepel;
         }
 
         public static class SimpleItem {
