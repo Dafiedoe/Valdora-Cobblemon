@@ -9,6 +9,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import net.valdora.areanotifications.AreaNotificationManager;
 import net.valdora.battle.Generation5AI;
+import net.valdora.biomespiralchanger.BiomeChangerCommands;
 import net.valdora.events.PokemonEvolutionEvent;
 import net.valdora.general.*;
 import net.valdora.items.repel.RepelItem;
@@ -84,6 +85,7 @@ public class Valdora implements ModInitializer {
 		ShinyHour.register();
 		AreaNotificationManager.register();
 		RepelManager.register();
+		BiomeChangerCommands.register();
 
 		Generation5AI.initialiseTypeChart();
 
