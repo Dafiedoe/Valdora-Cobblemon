@@ -26,6 +26,7 @@ public class BiomeChanger {
     private static Thread changerThread;
     private static final AtomicBoolean running = new AtomicBoolean(false);
     private static final AtomicBoolean paused = new AtomicBoolean(false);
+    private static final AtomicBoolean regionInProgress = new AtomicBoolean(false);
     
     private static int x = 0;
     private static int z = 0;
@@ -40,6 +41,11 @@ public class BiomeChanger {
     private static Alignment alignment = Alignment.CENTER;
     
     private static final long MAX_VOLUME = 32768L;
+    
+    // --- server safety throttles ---
+    private static final int COMMAND_DELAY_TICKS = 3;   // delay between fillbiome commands
+    private static final int REGION_COOLDOWN_TICKS = 40; // wait after a region finishes
+    private static final int MAX_ACTIVE_REGIONS = 1;     // DO NOT increase unless you know what you're doing
     
     private static class Region {
         final int sx, ex, sz, ez;
@@ -113,6 +119,11 @@ public class BiomeChanger {
                     try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
                 }
                 
+                // Wait until current region finishes before advancing spiral
+                while (regionInProgress.get() && running.get()) {
+                    try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+                }
+                
                 currentChunkX += dx;
                 currentChunkZ += dz;
                 
@@ -127,7 +138,9 @@ public class BiomeChanger {
                     if (dz == 0) segmentLength++;
                 }
                 
-                try { Thread.sleep(30); } catch (InterruptedException e) { e.printStackTrace(); }
+                try {
+                    Thread.sleep(300); // 5 chunks per second max
+                } catch (InterruptedException ignored) {}
             }
         }, "Valdora-BiomeChanger");
         
@@ -147,6 +160,11 @@ public class BiomeChanger {
     public static void Resume() { paused.set(false); }
     
     private static void fillBiomeChunkAt(int chunkX, int chunkZ, boolean debugFirst) {
+        // Ensure only one active region at a time
+        if (!regionInProgress.compareAndSet(false, true)) {
+            return;
+        }
+        
         final int blockStartX = chunkX * 16;
         final int blockStartZ = chunkZ * 16;
         final int blockEndX = (chunkX + chunkSize) * 16 - 1;
@@ -256,26 +274,107 @@ public class BiomeChanger {
                 }
             }
             
-            // schedule fill commands staggered by 1 tick each (baseDelay gives a tick for chunk load to settle)
-            int baseDelay = 1;
-            for (int i = 0; i < fillCommands.size(); i++) {
-                final String cmd = fillCommands.get(i);
-                final int delay = baseDelay + i;
-                TickScheduler.runNextTick(delay, () -> {
-                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
-                });
-            }
+            // --- WAIT until chunks are *observably* loaded, then run fill commands ---
+            final int MAX_WAIT_TICKS = 40; // how many ticks to wait (adjustable)
             
-            // unforce after all done with a safety delay
-            int unforceDelay = baseDelay + fillCommands.size() + 2;
-            TickScheduler.runNextTick(unforceDelay, () -> {
+            // Supplier to check whether all affected chunks are reported loaded
+            java.util.function.Supplier<Boolean> allLoaded = () -> {
                 for (int cx = minChunkX; cx <= maxChunkX; cx++) {
                     for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
-                        serverWorld.setChunkForced(cx, cz, false);
+                        int checkX = cx * 16 + 8;
+                        int checkZ = cz * 16 + 8;
+                        if (!serverWorld.isChunkLoaded(new BlockPos(checkX, 0, checkZ))) {
+                            return false;
+                        }
                     }
                 }
-            });
+                return true;
+            };
+            
+            // Waiter that polls each tick up to MAX_WAIT_TICKS then runs fills
+            class Waiter {
+                int remaining;
+                Waiter(int remaining) { this.remaining = remaining; }
+                
+                void tick() {
+                    try {
+                        if (allLoaded.get()) {
+                            // schedule fills staggered by 1 tick each (give small settle delay)
+                            int baseDelay = 1;
+                            for (int i = 0; i < fillCommands.size(); i++) {
+                                final String cmd = fillCommands.get(i);
+                                final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
+                                TickScheduler.runNextTick(delay, () -> {
+                                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
+                                });
+                            }
+                            
+                            // unforce after all parts done, with a small safety delay
+                            int unforceDelay =
+                                    baseDelay
+                                            + (fillCommands.size() * COMMAND_DELAY_TICKS)
+                                            + REGION_COOLDOWN_TICKS;
+                            TickScheduler.runNextTick(unforceDelay, () -> {
+                                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                                        serverWorld.setChunkForced(cx, cz, false);
+                                    }
+                                }
+                                regionInProgress.set(false);
+                            });
+                            return;
+                        }
+                        
+                        if (remaining <= 0) {
+                            // timed out — log and proceed anyway
+                            Valdora.LOGGER.warn("Timed out waiting for chunks [{},{}]-[{},{}] to report loaded; proceeding with fillbiome anyway.",
+                                    minChunkX, minChunkZ, maxChunkX, maxChunkZ);
+                            
+                            int baseDelay = 1;
+                            for (int i = 0; i < fillCommands.size(); i++) {
+                                final String cmd = fillCommands.get(i);
+                                final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
+                                TickScheduler.runNextTick(delay, () -> {
+                                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
+                                });
+                            }
+                            
+                            int unforceDelay =
+                                    baseDelay
+                                            + (fillCommands.size() * COMMAND_DELAY_TICKS)
+                                            + REGION_COOLDOWN_TICKS;
+                            
+                            TickScheduler.runNextTick(unforceDelay, () -> {
+                                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                                        serverWorld.setChunkForced(cx, cz, false);
+                                    }
+                                }
+                                regionInProgress.set(false);
+                            });
+                            return;
+                        }
+                        
+                        remaining--;
+                        // try again next tick
+                        TickScheduler.runNextTick(1, this::tick);
+                    } catch (Exception e) {
+                        // should not happen, but ensure we unforce chunks if something unexpected occurs
+                        Valdora.LOGGER.warn("Exception while waiting for chunks to load: {}", e.toString());
+                        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                                try { serverWorld.setChunkForced(cx, cz, false); } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // start waiting
+            new Waiter(MAX_WAIT_TICKS).tick();
+            // --- end waiter ---
         });
+        
     }
     
     /**
