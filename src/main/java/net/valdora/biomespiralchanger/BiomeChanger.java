@@ -1,14 +1,25 @@
 package net.valdora.biomespiralchanger;
 
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkStatus;
 
+import net.valdora.Valdora;
+import net.valdora.utils.TickScheduler;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * BiomeChanger working in chunk coordinates with robust splitting to respect the /fillbiome volume limit.
+ *
+ * Fix: start the spiral facing east (dx=1,dz=0) so the west neighbor isn't skipped.
+ */
 public class BiomeChanger {
     private static ServerPlayerEntity player = null;
     private static String biomeId = null;
@@ -16,44 +27,57 @@ public class BiomeChanger {
     private static final AtomicBoolean running = new AtomicBoolean(false);
     private static final AtomicBoolean paused = new AtomicBoolean(false);
     
-    // Saved origin (last setup)
     private static int x = 0;
     private static int z = 0;
     
-    // Block stepping (configurable)
-    private static int blockSize = 8;
+    // player's chunk at Setup time — we will always start the spiral here
+    private static int originChunkX = 0;
+    private static int originChunkZ = 0;
     
-    // Alignment choice for the starting square
+    private static int chunkSize = 1;
+    
     private enum Alignment { FLOOR, NEAREST, CENTER }
     private static Alignment alignment = Alignment.CENTER;
     
-    /**
-     * Setup the player, target biome and block size (in blocks).
-     * blockSize will be rounded down to the nearest multiple of 4 and min 4.
-     * Alignment defaults to CENTER. You can add an overload to expose alignment via command.
-     */
+    private static final long MAX_VOLUME = 32768L;
+    
+    private static class Region {
+        final int sx, ex, sz, ez;
+        Region(int sx, int ex, int sz, int ez) {
+            this.sx = sx; this.ex = ex; this.sz = sz; this.ez = ez;
+        }
+    }
+    
     public static void Setup(ServerPlayerEntity _player, String _biomeId) {
         player = _player;
         biomeId = _biomeId;
+        
         BlockPos pos = player.getBlockPos();
         x = pos.getX();
         z = pos.getZ();
+        
+        originChunkX = Math.floorDiv(x, 16);
+        originChunkZ = Math.floorDiv(z, 16);
     }
     
-    /**
-     * Start changing biomes in a spiral pattern. Steps are done per `blockSize` block squares.
-     * If a previous run is active, it will be stopped and replaced with this new run.
-     */
+    public static void SetChunkSize(int size) {
+        chunkSize = Math.max(1, size);
+    }
+    
     public static void Start(ServerPlayerEntity commandSource) {
         if (player == null || biomeId == null) {
-            commandSource.sendMessage(Text.literal("Setup has not yet been run. Use '/valdora biomechanger setup <biome> <blockSize>' first!")
-                    .formatted(Formatting.RED));
+            commandSource.sendMessage(
+                    Text.literal("Setup has not yet been run. Use '/valdora biomechanger setup <biome> <chunkSize>' first!")
+                            .formatted(Formatting.RED)
+            );
             return;
         }
         
-        // If something's already running, stop it first to avoid multiple threads
         if (running.get()) {
-            commandSource.sendMessage(Text.literal("Stopping previous biome-changer run and starting a new one...").formatted(Formatting.YELLOW));
+            commandSource.sendMessage(
+                    Text.literal("Stopping previous biome-changer run and starting a new one...")
+                            .formatted(Formatting.YELLOW)
+            );
             Stop();
             int attempts = 0;
             while (changerThread != null && attempts++ < 10) {
@@ -65,51 +89,34 @@ public class BiomeChanger {
         paused.set(false);
         
         changerThread = new Thread(() -> {
-            int dx = 0;
-            int dz = 1;
+            // **Start facing EAST** so spiral visits west neighbor properly.
+            int dx = 1;
+            int dz = 0;
             int segmentLength = 1;
             int radiusCounter = 0;
             
-            // Compute the starting square according to alignment choice.
-            // startX..startX+blockSize-1 is the first block-square that will be filled.
-            final int startX;
-            final int startZ;
-            switch (alignment) {
-                case NEAREST:
-                    startX = Math.floorDiv(x + blockSize/2, blockSize) * blockSize;
-                    startZ = Math.floorDiv(z + blockSize/2, blockSize) * blockSize;
-                    break;
-                case FLOOR:
-                    startX = Math.floorDiv(x, blockSize) * blockSize;
-                    startZ = Math.floorDiv(z, blockSize) * blockSize;
-                    break;
-                case CENTER:
-                default:
-                    // Center the block-square around the player as best as integer arithmetic allows.
-                    // We compute a candidate start so the player is near the center of the block-square,
-                    // then do not force it to be blockSize-multiple — fillBiomeBlockAt will expand to 4x4 biome cells properly.
-                    int halfIndex = (blockSize - 1) / 2; // integer
-                    startX = x - halfIndex;
-                    startZ = z - halfIndex;
-                    break;
-            }
+            // Use the stored origin chunk from Setup — always start the spiral at the player's chunk.
+            final int playerChunkX = originChunkX;
+            final int playerChunkZ = originChunkZ;
             
-            int currentX = startX;
-            int currentZ = startZ;
+            // Start at the player's chunk to ensure center is processed.
+            final int startChunkX = playerChunkX;
+            final int startChunkZ = playerChunkZ;
             
-            // Immediately apply the first block and print debug info
-            fillBiomeBlockAt(currentX, currentZ, /*debugFirst=*/true);
+            int currentChunkX = startChunkX;
+            int currentChunkZ = startChunkZ;
+            
+            fillBiomeChunkAt(currentChunkX, currentChunkZ, /*debugFirst=*/true);
             
             while (running.get()) {
                 while (paused.get()) {
                     try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
                 }
                 
-                // Step by blockSize in spiral pattern
-                currentX += dx * blockSize;
-                currentZ += dz * blockSize;
+                currentChunkX += dx;
+                currentChunkZ += dz;
                 
-                fillBiomeBlockAt(currentX, currentZ, /*debugFirst=*/false);
+                fillBiomeChunkAt(currentChunkX, currentChunkZ, /*debugFirst=*/false);
                 
                 radiusCounter++;
                 if (radiusCounter == segmentLength) {
@@ -136,73 +143,155 @@ public class BiomeChanger {
         }
     }
     
-    public static void Pause() {
-        paused.set(true);
-    }
+    public static void Pause() { paused.set(true); }
+    public static void Resume() { paused.set(false); }
     
-    public static void Resume() {
-        paused.set(false);
-    }
-    
-    /**
-     * Fill the biome for a block-aligned square starting at (startX, startZ) of size blockSize.
-     * This method computes the 4x4-aligned biome cell extents and requests the server to run the
-     * /fillbiome command on the main server thread.
-     *
-     * debugFirst prints extra info about how the start was computed for the very first block.
-     */
-    private static void fillBiomeBlockAt(int startX, int startZ, boolean debugFirst) {
+    private static void fillBiomeChunkAt(int chunkX, int chunkZ, boolean debugFirst) {
+        final int blockStartX = chunkX * 16;
+        final int blockStartZ = chunkZ * 16;
+        final int blockEndX = (chunkX + chunkSize) * 16 - 1;
+        final int blockEndZ = (chunkZ + chunkSize) * 16 - 1;
+        
         MinecraftServer server = player.getServer();
         if (server == null) return;
         
-        World world = player.getWorld();
-        
-        // Inclusive end coords for the block region
-        int endX = startX + blockSize - 1;
-        int endZ = startZ + blockSize - 1;
-        
-        // Expand to 4x4 biome cell boundaries (inclusive)
-        int cellStartX4 = Math.floorDiv(Math.min(startX, endX), 4) * 4;
-        int cellStartZ4 = Math.floorDiv(Math.min(startZ, endZ), 4) * 4;
-        int cellEndX4 = Math.floorDiv(Math.max(startX, endX), 4) * 4 + 3;
-        int cellEndZ4 = Math.floorDiv(Math.max(startZ, endZ), 4) * 4 + 3;
-        
-        // Quick chunk-loaded check at center of the cell range
-        int centerX = (cellStartX4 + cellEndX4) / 2;
-        int centerZ = (cellStartZ4 + cellEndZ4) / 2;
-        BlockPos checkPos = new BlockPos(centerX, 0, centerZ);
-        if (!world.isChunkLoaded(checkPos)) return;
-        
-        int yStart = world.getBottomY();
-        int yEnd = world.getTopY() - 1;
-        
-        final String command = String.format("/fillbiome %d %d %d %d %d %d %s",
-                cellStartX4, yStart, cellStartZ4,
-                cellEndX4,   yEnd,   cellEndZ4,
-                biomeId
-        );
-        
         server.execute(() -> {
-            server.getCommandManager().executeWithPrefix(player.getCommandSource(), command);
+            ServerWorld serverWorld = (ServerWorld) player.getWorld();
             
-            // DEBUG: show player's block, alignment, computed start and resulting ranges
+            final int minChunkX = chunkX;
+            final int maxChunkX = chunkX + chunkSize - 1;
+            final int minChunkZ = chunkZ;
+            final int maxChunkZ = chunkZ + chunkSize - 1;
+            
+            // Force and synchronously request chunks
+            for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                    try {
+                        serverWorld.setChunkForced(cx, cz, true);
+                        serverWorld.getChunkManager().getChunk(cx, cz, ChunkStatus.FULL, true);
+                    } catch (Exception e) {
+                        Valdora.LOGGER.warn("Failed to force/load chunk {} {}, exception: {}", cx, cz, e.toString());
+                    }
+                }
+            }
+            
+            int yStart = serverWorld.getBottomY();
+            int yEnd = serverWorld.getTopY() - 1;
+            final int ySize = yEnd - yStart + 1;
+            
+            // initial 4-way partition
+            List<Region> parts = splitIntoFour(blockStartX, blockEndX, blockStartZ, blockEndZ);
+            
             if (debugFirst) {
                 BlockPos playerPos = player.getBlockPos();
-                int playerBlockX = playerPos.getX();
-                int playerBlockZ = playerPos.getZ();
-                
-                String debug = String.format("playerBlock=(%d,%d) alignment=%s -> blockStart=(%d,%d) blockRangeX=[%d..%d] blockRangeZ=[%d..%d] cellRangeX=[%d..%d] cellRangeZ=[%d..%d]",
-                        playerBlockX, playerBlockZ,
-                        alignment,
-                        startX, startZ,
-                        startX, endX,
-                        startZ, endZ,
-                        cellStartX4, cellEndX4,
-                        cellStartZ4, cellEndZ4
-                );
-                
+                String debug = String.format("playerBlock=(%d,%d) chunkStart=(%d,%d) chunkSize=%d -> blockRangeX=[%d..%d] blockRangeZ=[%d..%d] initialParts=%d",
+                        playerPos.getX(), playerPos.getZ(),
+                        chunkX, chunkZ,
+                        chunkSize,
+                        blockStartX, blockEndX,
+                        blockStartZ, blockEndZ,
+                        parts.size());
                 player.sendMessage(Text.literal(debug).formatted(Formatting.GRAY), false);
             }
+            
+            // Build a list of concrete fill commands (handles horizontal recursion and vertical slicing)
+            List<String> fillCommands = new ArrayList<>();
+            
+            // Worklist for horizontal splitting when footprint alone exceeds MAX_VOLUME
+            List<Region> work = new ArrayList<>(parts);
+            while (!work.isEmpty()) {
+                Region r = work.remove(0);
+                
+                // skip degenerate regions
+                if (r.sx > r.ex || r.sz > r.ez) continue;
+                
+                long xLen = (long) r.ex - r.sx + 1L;
+                long zLen = (long) r.ez - r.sz + 1L;
+                
+                // if even a 1-high slice is too big horizontally, split horizontally
+                if (xLen * zLen > MAX_VOLUME) {
+                    // split along longer horizontal axis
+                    if (xLen >= zLen) {
+                        int midX = Math.floorDiv(r.sx + r.ex, 2);
+                        if (midX < r.sx || midX >= r.ex) {
+                            // fallback: treat as-is (shouldn't normally happen)
+                            work.add(r);
+                        } else {
+                            work.add(0, new Region(midX + 1, r.ex, r.sz, r.ez));
+                            work.add(0, new Region(r.sx, midX, r.sz, r.ez));
+                        }
+                    } else {
+                        int midZ = Math.floorDiv(r.sz + r.ez, 2);
+                        if (midZ < r.sz || midZ >= r.ez) {
+                            work.add(r);
+                        } else {
+                            work.add(0, new Region(r.sx, r.ex, midZ + 1, r.ez));
+                            work.add(0, new Region(r.sx, r.ex, r.sz, midZ));
+                        }
+                    }
+                    continue;
+                }
+                
+                // horizontal footprint is small enough; compute vertical slices
+                long footprint = xLen * zLen;
+                // sliceHeight such that footprint * sliceHeight <= MAX_VOLUME
+                int sliceHeight = (int) Math.max(1L, MAX_VOLUME / footprint);
+                // how many full slices needed to cover ySize
+                int slices = (int) ((ySize + sliceHeight - 1) / sliceHeight);
+                
+                for (int s = 0; s < slices; s++) {
+                    int sliceYStart = yStart + s * sliceHeight;
+                    int sliceYEnd = Math.min(yEnd, sliceYStart + sliceHeight - 1);
+                    
+                    int sx4 = Math.floorDiv(r.sx, 4) * 4;
+                    int sz4 = Math.floorDiv(r.sz, 4) * 4;
+                    int ex4 = Math.floorDiv(r.ex, 4) * 4 + 3;
+                    int ez4 = Math.floorDiv(r.ez, 4) * 4 + 3;
+                    
+                    String cmd = String.format("/fillbiome %d %d %d %d %d %d %s",
+                            sx4, sliceYStart, sz4,
+                            ex4, sliceYEnd, ez4,
+                            biomeId);
+                    fillCommands.add(cmd);
+                }
+            }
+            
+            // schedule fill commands staggered by 1 tick each (baseDelay gives a tick for chunk load to settle)
+            int baseDelay = 1;
+            for (int i = 0; i < fillCommands.size(); i++) {
+                final String cmd = fillCommands.get(i);
+                final int delay = baseDelay + i;
+                TickScheduler.runNextTick(delay, () -> {
+                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
+                });
+            }
+            
+            // unforce after all done with a safety delay
+            int unforceDelay = baseDelay + fillCommands.size() + 2;
+            TickScheduler.runNextTick(unforceDelay, () -> {
+                for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                    for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                        serverWorld.setChunkForced(cx, cz, false);
+                    }
+                }
+            });
         });
+    }
+    
+    /**
+     * split rectangle into four quadrants (may include degenerate quadrants)
+     * Use Math.floorDiv for midpoint so negatives behave correctly.
+     */
+    private static List<Region> splitIntoFour(int sx, int ex, int sz, int ez) {
+        List<Region> out = new ArrayList<>(4);
+        int midX = Math.floorDiv(sx + ex, 2);
+        int midZ = Math.floorDiv(sz + ez, 2);
+        
+        out.add(new Region(sx,      midX, sz,      midZ));      // NW
+        out.add(new Region(midX+1,  ex,   sz,      midZ));      // NE
+        out.add(new Region(sx,      midX, midZ+1,  ez));       // SW
+        out.add(new Region(midX+1,  ex,   midZ+1,  ez));       // SE
+        
+        return out;
     }
 }
