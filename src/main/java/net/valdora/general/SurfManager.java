@@ -19,13 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SurfManager {
     private static final Map<ServerPlayerEntity, SurfBoardEntity> surfingPlayers = new ConcurrentHashMap<>();
     private static final int LAND_SEARCH_RADIUS = 64;
-
+    
     public static void tick(ServerPlayerEntity player) {
         World world = player.getWorld();
-
+        
         boolean inWater = player.isTouchingWater();
         boolean hasSurfHM = PokemonPartyApi.hasSurf(player);
-
+        
         // prevent entering water without Surf HM
         if (inWater && !hasSurfHM) {
             // notify player
@@ -37,10 +37,10 @@ public class SurfManager {
             }
             return;
         }
-
+        
         // don’t touch real boats
         if (player.getVehicle() instanceof BoatEntity) return;
-
+        
         // cleanup if player dismounted manually
         SurfBoardEntity currentBoard = surfingPlayers.get(player);
         if (currentBoard != null && player.getVehicle() != currentBoard) {
@@ -48,14 +48,14 @@ public class SurfManager {
             surfingPlayers.remove(player);
             currentBoard.discard();
         }
-
+        
         // spawn surf board when Surf HM and at water surface
         if (inWater && hasSurfHM && !surfingPlayers.containsKey(player)) {
             BlockPos waterPos = findWaterSurfacePos(world, player.getBlockPos());
             if (waterPos != null && !world.getFluidState(waterPos.up()).isIn(FluidTags.WATER)) {
                 var state = world.getFluidState(waterPos);
                 double spawnY = waterPos.getY() + state.getHeight(world, waterPos);
-
+                
                 SurfBoardEntity board = new SurfBoardEntity(ModEntities.SURF_BOARD, world);
                 board.refreshPositionAndAngles(
                         player.getX(),
@@ -64,13 +64,13 @@ public class SurfManager {
                         player.getYaw(),
                         player.getPitch()
                 );
-
+                
                 world.spawnEntity(board);
                 player.startRiding(board, true);
                 surfingPlayers.put(player, board);
             }
         }
-
+        
         // remove surf board when leaving water or losing Surf HM
         if ((!inWater || !hasSurfHM) && surfingPlayers.containsKey(player)) {
             SurfBoardEntity board = surfingPlayers.remove(player);
@@ -81,11 +81,11 @@ public class SurfManager {
             }
         }
     }
-
+    
     private static boolean isPlayerInWater(ServerPlayerEntity player) {
         return player.isTouchingWater();
     }
-
+    
     private static BlockPos findWaterSurfacePos(World world, BlockPos origin) {
         for (int i = 0; i <= 5; i++) {
             BlockPos pos = origin.down(i);
@@ -95,7 +95,7 @@ public class SurfManager {
         }
         return null;
     }
-
+    
     private static void teleportToLandIfAdjacent(ServerPlayerEntity player, BlockPos waterPos) {
         World world = player.getWorld();
         for (Direction dir : Direction.Type.HORIZONTAL) {
@@ -112,13 +112,13 @@ public class SurfManager {
             }
         }
     }
-
+    
     private static BlockPos findNearestLandPos(World world, BlockPos origin) {
         Queue<BlockPos> queue = new ArrayDeque<>();
         Set<BlockPos> visited = new HashSet<>();
         queue.add(origin);
         visited.add(origin);
-
+        
         while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
             if (!world.getFluidState(pos).isIn(FluidTags.WATER) && !world.getBlockState(pos).isAir()) {

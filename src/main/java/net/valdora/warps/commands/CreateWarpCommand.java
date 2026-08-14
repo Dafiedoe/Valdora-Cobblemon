@@ -15,15 +15,15 @@ public class CreateWarpCommand {
         dispatcher.register(
                 CommandManager.literal("valdora")
                         .then(CommandManager.literal("createwarp")
-                            .requires(source -> Permissions.check(source, "valdora.createwarp", 2))
-                            .then(CommandManager.argument("warpId", StringArgumentType.string())
-                                            .executes(CreateWarpCommand::execute))));
+                                .requires(source -> Permissions.check(source, "valdora.createwarp", 2))
+                                .then(CommandManager.argument("warpId", StringArgumentType.string())
+                                        .executes(CreateWarpCommand::execute))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity targetPlayer = context.getSource().getPlayerOrThrow();
         String warpId = StringArgumentType.getString(context, "warpId");
-
+        
         WarpManager.createWarp(targetPlayer, warpId);
         return 1;
     }

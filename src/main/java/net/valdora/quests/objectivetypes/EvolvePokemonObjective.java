@@ -3,7 +3,6 @@ package net.valdora.quests.objectivetypes;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.types.ElementalType;
 import com.cobblemon.mod.common.api.types.ElementalTypes;
-import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.google.gson.JsonObject;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -16,10 +15,10 @@ public class EvolvePokemonObjective extends Objective {
     private Species species;
     private ElementalType type;
     private boolean any = false;
-
+    
     public EvolvePokemonObjective(String title, String description, String questId, JsonObject json) {
         super(title, description, ObjectiveType.EVOLVE_POKEMON, questId);
-
+        
         if (json.has("species")) {
             String speciesStr = json.get("species").getAsString().trim();
             if (speciesStr.equalsIgnoreCase("any")) {
@@ -31,7 +30,7 @@ public class EvolvePokemonObjective extends Objective {
                 }
             }
         }
-
+        
         if (json.has("pkmn_type")) {
             String typeStr = json.get("pkmn_type").getAsString().trim();
             if (typeStr.equalsIgnoreCase("any")) {
@@ -43,24 +42,24 @@ public class EvolvePokemonObjective extends Objective {
                 }
             }
         }
-
+        
         if (species == null && type == null && !any) {
             Valdora.LOGGER.warn("CatchPokemonObjective: No valid species/type/any configured for quest " + questId);
         }
-
+        
         if (species != null && type != null) {
             Valdora.LOGGER.warn("CatchPokemonObjective: Both 'species' and 'pkmn_type' provided for quest " + questId + ". Species will take precedence.");
         }
     }
-
+    
     @Override
     public boolean handleObjectiveUpdate(ActiveQuest activeQuest, ServerPlayerEntity player, Object data) {
         if (!any && species == null && type == null) return false;
-
+        
         if (!(data instanceof Species evolvedPokemonSpecies)) return false;
-
+        
         boolean matched = false;
-
+        
         if (any) {
             matched = true;
         } else if (species != null) {
@@ -70,12 +69,12 @@ public class EvolvePokemonObjective extends Objective {
             ElementalType pSec = evolvedPokemonSpecies.getSecondaryType();
             matched = (pPrim != null && pPrim.equals(type)) || (pSec != null && pSec.equals(type));
         }
-
+        
         if (matched) {
             activeQuest.count++;
             return activeQuest.count >= count;
         }
-
+        
         return false;
     }
 }

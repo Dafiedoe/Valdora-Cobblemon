@@ -30,28 +30,28 @@ import java.util.*;
 public class CheckPointManager {
     private static final String CHECKPOINT_CONFIG_PATH = "config/valdora/checkpoints/";
     private static final Gson GSON = new GsonBuilder().create();
-
+    
     private static final Map<String, CheckPoint> CHECKPOINTS = new HashMap<>();
-
+    
     private static final List<ServerPlayerEntity> recallingPlayers = new ArrayList<>();
-
+    
     public static void register() {
         load();
-
+        
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             RecallCommand.register(dispatcher);
         }));
-
+        
         ServerTickEvents.END_WORLD_TICK.register(world -> {
             if (world.getServer().getTicks() % 5 != 0) return;
-
+            
             checkPlayerCheckPoints(world);
         });
     }
-
+    
     public static void load() {
         CHECKPOINTS.clear();
-
+        
         try {
             Path configPath = Paths.get(CHECKPOINT_CONFIG_PATH);
             if (!Files.exists(configPath)) {
@@ -59,7 +59,7 @@ public class CheckPointManager {
                 Valdora.LOGGER.info("Created checkpoint config directory: " + configPath);
                 return;
             }
-
+            
             Files.walk(configPath)
                     .filter(path -> path.toString().endsWith(".json"))
                     .forEach(path -> {
@@ -77,93 +77,91 @@ public class CheckPointManager {
                             Valdora.LOGGER.error("Error parsing checkpoint config from " + path.getFileName() + ": " + e.getMessage());
                         }
                     });
-
+            
             Valdora.LOGGER.info("Successfully registered " + CHECKPOINTS.size() + " checkpoints");
-
+            
         } catch (IOException e) {
             Valdora.LOGGER.error("Failed to access checkpoint config directory: " + e.getMessage());
         }
     }
-
+    
     public static Map<String, CheckPoint> getCheckPoints() {
         return CHECKPOINTS;
     }
-
+    
     public static CheckPoint getCheckPointById(String id) {
         if (CHECKPOINTS.containsKey(id)) {
             return CHECKPOINTS.get(id);
         }
         return null;
     }
-
+    
     private static void checkPlayerCheckPoints(ServerWorld world) {
         for (ServerPlayerEntity player : world.getPlayers()) {
             Vec3d currentPos = player.getPos();
             for (Map.Entry<String, CheckPoint> entry : CHECKPOINTS.entrySet()) {
                 CheckPoint cp = entry.getValue();
-
-                Box areaBox = new Box(
-                        Math.min(cp.pos1X, cp.pos2X), Math.min(cp.pos1Y, cp.pos2Y), Math.min(cp.pos1Z, cp.pos2Z),
-                        Math.max(cp.pos1X, cp.pos2X) + 1, Math.max(cp.pos1Y, cp.pos2Y) + 1, Math.max(cp.pos1Z, cp.pos2Z) + 1
-                );
-
+                
+                Box areaBox = new Box(Math.min(cp.pos1X, cp.pos2X), Math.min(cp.pos1Y, cp.pos2Y), Math.min(cp.pos1Z, cp.pos2Z),
+                        Math.max(cp.pos1X, cp.pos2X) + 1, Math.max(cp.pos1Y, cp.pos2Y) + 1, Math.max(cp.pos1Z, cp.pos2Z) + 1);
+                
                 if (areaBox.contains(currentPos)) {
                     onCheckPointEntered(player, cp);
                 }
             }
         }
     }
-
+    
     private static void onCheckPointEntered(ServerPlayerEntity player, CheckPoint cp) {
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
-
+        
         if (progress.getLastCheckPoint() != null && progress.getLastCheckPoint().equals(cp.id)) return;
-
+        
         progress.setLastCheckPoint(cp.id);
-
+        
         PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
     }
-
+    
     public static void recallPlayerToCheckPoint(ServerPlayerEntity player, boolean healPokemon) {
         if (recallingPlayers.contains(player)) {
             Valdora.LOGGER.info(player.getName().getString() + " is already recalling!");
             return;
         }
-
+        
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
-
+        
         recallingPlayers.add(player);
-
+        
         if (healPokemon) {
             TickScheduler.runNextTick(25, () -> Cobblemon.INSTANCE.getStorage().getParty(player).heal());
         }
-
+        
         if (progress.getLastCheckPoint() == null || (progress.getLastCheckPoint() != null && progress.getLastCheckPoint().isEmpty())) {
             player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 3 * 20, 0, false, false));
-
+            
             MinecraftServer server = player.getServer();
             RegistryKey<World> worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(Valdora.WORLD_SPAWN_DIMENSION));
             ServerWorld targetWorld = server.getWorld(worldKey);
-
+            
             TickScheduler.runNextTick(25, () -> {
                 player.teleport(targetWorld, Valdora.WORLD_SPAWN_X, Valdora.WORLD_SPAWN_Y, Valdora.WORLD_SPAWN_Z, Valdora.WORLD_SPAWN_YAW, Valdora.WORLD_SPAWN_PITCH);
             });
-
+            
             TickScheduler.runNextTick(3 * 20, () -> {
                 if (isPlayerRecalling(player)) recallingPlayers.remove(player);
             });
             return;
         }
-
+        
         String lastCheckPoint = progress.getLastCheckPoint();
         CheckPoint cp = getCheckPointById(lastCheckPoint);
-
+        
         player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 3 * 20, 0, false, false));
-
+        
         MinecraftServer server = player.getServer();
         RegistryKey<World> worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(cp.world));
         ServerWorld targetWorld = server.getWorld(worldKey);
-
+        
         if (targetWorld != null) {
             TickScheduler.runNextTick(25, () -> {
                 player.teleport(targetWorld, cp.resetPosX, cp.resetPosY, cp.resetPosZ, cp.resetPosYaw, cp.resetPosPitch);
@@ -175,7 +173,7 @@ public class CheckPointManager {
             Valdora.LOGGER.warn("A world with id '" + cp.world + "' does not exist!");
         }
     }
-
+    
     public static boolean isPlayerRecalling(ServerPlayerEntity player) {
         return recallingPlayers.contains(player);
     }

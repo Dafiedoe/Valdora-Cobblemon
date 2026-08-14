@@ -14,7 +14,7 @@ public class CheckPoint {
     public double pos2X;
     public double pos2Y;
     public double pos2Z;
-
+    
     public CheckPoint() {
         id = "";
         world = "";

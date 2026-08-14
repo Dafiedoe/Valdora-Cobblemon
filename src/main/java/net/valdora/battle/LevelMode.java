@@ -4,18 +4,16 @@ public enum LevelMode {
     NORMAL(),
     RELATIVE(),
     FLAT();
-
-    LevelMode() {
-
-    }
-
+    
+    LevelMode() { }
+    
     public static class Factory implements SimpleFactory<LevelMode> {
         private final String levelMode;
-
+        
         public Factory(String levelMode) {
             this.levelMode = levelMode;
         }
-
+        
         @Override
         public LevelMode create() {
             return switch (levelMode) {

@@ -11,12 +11,12 @@ public class OnPokemonFainted {
     public static void register() {
         CobblemonEvents.POKEMON_FAINTED.subscribe(Priority.HIGHEST, OnPokemonFainted::PokemonFainted);
     }
-
+    
     private static Unit PokemonFainted(PokemonFaintedEvent event) {
         if (event.getPokemon().getOriginalTrainer() != null && TrainerManager.getTrainerById(event.getPokemon().getOriginalTrainer()) != null) {
             event.getPokemon().setHeldItem$common(ItemStack.EMPTY);
         }
-
+        
         return Unit.INSTANCE;
     }
 }

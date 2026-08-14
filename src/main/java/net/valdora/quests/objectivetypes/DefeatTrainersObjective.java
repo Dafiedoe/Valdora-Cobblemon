@@ -11,14 +11,14 @@ import net.valdora.trainers.TrainerConfig;
 public class DefeatTrainersObjective extends Objective {
     public boolean specificTrainer = false;
     public String trainerId;
-
+    
     public DefeatTrainersObjective(String title, String description, String questId, JsonObject json) {
         super(title, description, ObjectiveType.DEFEAT_TRAINER, questId);
-
+        
         if (json.has("specific_trainer")) {
             trainerId = json.get("specific_trainer").getAsString();
             specificTrainer = true;
-
+            
             if (trainerId != null && !trainerId.isEmpty()) {
                 Valdora.LOGGER.error("Specific trainer is null or empty in objective: " + title + " in quest " + questId);
             }
@@ -26,7 +26,7 @@ public class DefeatTrainersObjective extends Objective {
             specificTrainer = false;
         }
     }
-
+    
     @Override
     public boolean handleObjectiveUpdate(ActiveQuest activeQuest, ServerPlayerEntity player, Object data) {
         if (specificTrainer) {
@@ -40,11 +40,11 @@ public class DefeatTrainersObjective extends Objective {
         } else {
             activeQuest.count++;
         }
-
+        
         if (activeQuest.count >= count) {
             return true;
         }
-
+        
         return false;
     }
 }

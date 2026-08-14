@@ -3,7 +3,6 @@ package net.valdora.spawning.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.valdora.Valdora;
 import net.valdora.spawning.SpawnEntry;
 import net.valdora.spawning.SpawnPoolManager;
 import net.minecraft.server.command.CommandManager;
@@ -21,18 +20,18 @@ public class DebugValidSpawnsCommand {
                         .requires(source -> Permissions.check(source, "valdora.debugspawns", 2))
                         .executes(DebugValidSpawnsCommand::execute)));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) {
         ServerPlayerEntity player = context.getSource().getPlayer();
         List<SpawnEntry> validSpawns = SpawnPoolManager.getValidSpawnsForPlayer(player);
-
+        
         if (validSpawns.isEmpty()) {
             player.sendMessage(Text.literal("No spawns for this biome/time/weather"), false);
         } else {
             String names = validSpawns.stream().map(entry -> entry.pokemon).collect(Collectors.joining(", "));
             player.sendMessage(Text.literal("Spawnable Pokemon: " + names), false);
         }
-
+        
         return 1;
     }
 }

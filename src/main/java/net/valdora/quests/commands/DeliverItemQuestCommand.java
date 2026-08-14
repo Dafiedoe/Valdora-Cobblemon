@@ -21,7 +21,7 @@ public class DeliverItemQuestCommand {
         progress.getActiveQuests().forEach(aq -> builder.suggest(aq.questId));
         return builder.buildFuture();
     };
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
                 .then(CommandManager.literal("deliver_item")
@@ -31,7 +31,7 @@ public class DeliverItemQuestCommand {
                                         .suggests(ACTIVE_QUEST_SUGGESTIONS)
                                         .executes(DeliverItemQuestCommand::execute)))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         String questId = StringArgumentType.getString(context, "questId");

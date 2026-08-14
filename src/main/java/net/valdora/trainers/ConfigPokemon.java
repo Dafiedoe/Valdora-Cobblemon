@@ -42,7 +42,7 @@ public class ConfigPokemon {
             Map.entry("Fan", Set.of("fan-appliance")),
             Map.entry("Mow", Set.of("mow-appliance"))
     );
-
+    
     public String species;
     public String form;
     public int level;
@@ -56,12 +56,12 @@ public class ConfigPokemon {
     public IVsConfig ivs;
     @SerializedName("evs")
     public EVsConfig evs;
-
+    
     public ConfigPokemon() {
         ivs = new IVsConfig();
         evs = new EVsConfig();
     }
-
+    
     public static class IVsConfig {
         public int hp;
         public int attack;
@@ -72,7 +72,7 @@ public class ConfigPokemon {
         public int specialDefense;
         public int speed;
     }
-
+    
     public static class EVsConfig {
         public int hp;
         public int attack;
@@ -83,7 +83,7 @@ public class ConfigPokemon {
         public int specialDefense;
         public int speed;
     }
-
+    
     public Pokemon build() {
         // Create pokemon with species
         Pokemon pokemon = new Pokemon();
@@ -93,15 +93,15 @@ public class ConfigPokemon {
             return null;
         }
         pokemon.setSpecies(pkmnSpecies);
-
+        
         // Set form using aspects
         if (form != null && !form.isEmpty()) {
             List<FormData> availableForms = pokemon.getSpecies().getForms();
-
+            
             Optional<FormData> matchedForm = availableForms.stream()
                     .filter(formData -> formData.getName().equalsIgnoreCase(form))
                     .findFirst();
-
+            
             if (matchedForm.isPresent()) {
                 String formName = matchedForm.get().getName();
                 Set<String> aspects = FORM_ASPECTS.getOrDefault(formName, Set.of());
@@ -110,14 +110,14 @@ public class ConfigPokemon {
                 Valdora.LOGGER.warn("No form named '" + form + "' found for " + species + ". Keeping default form.");
             }
         }
-
+        
         // Set level
         if (level < 1 || level > 100) {
             Valdora.LOGGER.error("Pokemon level cannot be lower than 1 or higher than 100. Level given: " + level);
             return null;
         }
         pokemon.setLevel(level);
-
+        
         // Set nature
         Nature pkmnNature = Natures.INSTANCE.getNature(nature);
         if (pkmnNature == null) {
@@ -125,7 +125,7 @@ public class ConfigPokemon {
             return null;
         }
         pokemon.setNature(pkmnNature);
-
+        
         // Set gender
         try {
             Gender pkmnGender = Gender.valueOf(gender.toUpperCase());
@@ -134,10 +134,10 @@ public class ConfigPokemon {
             Valdora.LOGGER.error("No Pokemon gender named '" + gender + "' exists. Genders available: 'MALE', 'FEMALE', 'GENDERLESS'");
             return null;
         }
-
+        
         // Set shiny
         pokemon.setShiny(isShiny);
-
+        
         // Set moveset
         MoveSet moveset = pokemon.getMoveSet();
         moveset.clear();
@@ -157,7 +157,7 @@ public class ConfigPokemon {
             }
             moveset.setMove(i, moveTemplate.create());
         }
-
+        
         // Set ability
         AbilityTemplate pkmnAbility = Abilities.INSTANCE.get(ability);
         if (pkmnAbility == null) {
@@ -165,7 +165,7 @@ public class ConfigPokemon {
             return null;
         }
         pokemon.updateAbility(pkmnAbility.create(true, Priority.HIGH));
-
+        
         // Set held item
         if (heldItem != null && !heldItem.equalsIgnoreCase("none")) {
             ItemStack pkmnHeldItem = new ItemStack(Registries.ITEM.get(Identifier.of(heldItem)));
@@ -175,7 +175,7 @@ public class ConfigPokemon {
             }
             pokemon.setHeldItem$common(pkmnHeldItem);
         }
-
+        
         // Set IVs
         if (ivs != null) {
             IVs pokemonIVs = pokemon.getIvs();
@@ -186,7 +186,7 @@ public class ConfigPokemon {
             pokemonIVs.set(Stats.SPECIAL_DEFENCE, ivs.specialDefense);
             pokemonIVs.set(Stats.SPEED, ivs.speed);
         }
-
+        
         // Set EVs
         if (evs != null) {
             EVs pokemonEVs = pokemon.getEvs();
@@ -197,7 +197,7 @@ public class ConfigPokemon {
             pokemonEVs.set(Stats.SPECIAL_DEFENCE, evs.specialDefense);
             pokemonEVs.set(Stats.SPEED, evs.speed);
         }
-
+        
         PokemonProperties.Companion.parse("uncatchable=yes").apply(pokemon);
         return pokemon;
     }

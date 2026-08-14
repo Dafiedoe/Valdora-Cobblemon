@@ -8,7 +8,6 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.valdora.Valdora;
 
 public class RecallCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -18,12 +17,12 @@ public class RecallCommand {
                         .then(CommandManager.argument("player", EntityArgumentType.player())
                                 .executes(RecallCommand::execute))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-
+        
         CheckPointManager.recallPlayerToCheckPoint(player, false);
-
+        
         return 1;
     }
 }

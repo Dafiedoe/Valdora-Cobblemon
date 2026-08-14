@@ -5,6 +5,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public interface PlayerBattleParticipant extends BattleParticipant {
     ServerPlayerEntity getPlayerEntity();
-
+    
     BattleActor createBattleActor();
 }

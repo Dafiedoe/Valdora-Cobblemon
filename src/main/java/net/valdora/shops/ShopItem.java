@@ -9,7 +9,7 @@ import net.valdora.Valdora;
 public class ShopItem {
     public String item;
     public int cost;
-
+    
     public ItemStack getItem(int amount) {
         Identifier id = Identifier.of(item);
         Item item = Registries.ITEM.get(id);

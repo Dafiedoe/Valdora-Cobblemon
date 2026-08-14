@@ -16,21 +16,21 @@ public class DeleteWarpCommand {
         WarpManager.getWarps().keySet().forEach(builder::suggest);
         return builder.buildFuture();
     };
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(
                 CommandManager.literal("valdora")
                         .then(CommandManager.literal("deletewarp")
-                        .requires(source -> Permissions.check(source, "valdora.deletewarp", 2))
-                        .then(CommandManager.argument("warpId", StringArgumentType.string())
-                                .suggests(WARP_SUGGESTIONS)
-                                .executes(DeleteWarpCommand::execute))));
+                                .requires(source -> Permissions.check(source, "valdora.deletewarp", 2))
+                                .then(CommandManager.argument("warpId", StringArgumentType.string())
+                                        .suggests(WARP_SUGGESTIONS)
+                                        .executes(DeleteWarpCommand::execute))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity targetPlayer = context.getSource().getPlayerOrThrow();
         String warpId = StringArgumentType.getString(context, "warpId");
-
+        
         WarpManager.deleteWarp(targetPlayer, warpId);
         return 1;
     }

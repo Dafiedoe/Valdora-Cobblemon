@@ -16,44 +16,45 @@ import java.util.Locale;
 public class FlaggedBarrierEntity extends BlockEntity {
     private String flagName = "";
     private String flagValue = "";
-
+    
     public FlaggedBarrierEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLAGGED_BARRIER_ENTITY, pos, state);
     }
-
+    
     public String getFlagName() { return flagName; }
+    
     public String getFlagValue() { return flagValue; }
-
+    
     public void setFlagData(String name, String value) {
         this.flagName = name == null ? "" : name.toLowerCase(Locale.ROOT);
         this.flagValue = value == null ? "" : value.toLowerCase(Locale.ROOT);
-
+        
         markDirty();
-
+        
         if (this.world != null && !this.world.isClient) {
             this.world.updateListeners(pos, getCachedState(), getCachedState(), Block.NOTIFY_ALL);
         }
     }
-
+    
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         super.writeNbt(nbt, lookup);
         nbt.putString("FlagName", flagName);
         nbt.putString("FlagValue", flagValue);
     }
-
+    
     @Override
     public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         super.readNbt(nbt, lookup);
         flagName = nbt.getString("FlagName");
         flagValue = nbt.getString("FlagValue");
     }
-
+    
     @Override
     public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup lookup) {
         return createNbtWithIdentifyingData(lookup);
     }
-
+    
     @Override
     public Packet<ClientPlayPacketListener> toUpdatePacket() {
         return BlockEntityUpdateS2CPacket.create(this);

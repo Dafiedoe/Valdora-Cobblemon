@@ -6,10 +6,10 @@ import java.util.UUID;
 
 public interface TrainerBattle {
     void start() throws BattleStartException;
-
+    
     UUID getBattleId();
-
+    
     PlayerBattleParticipant getPlayer();
-
+    
     TrainerBattleParticipant getTrainer();
 }

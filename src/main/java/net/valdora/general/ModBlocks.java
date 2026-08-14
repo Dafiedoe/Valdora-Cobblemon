@@ -13,16 +13,14 @@ import net.valdora.savedata.flaggedbarrier.FlaggedBarrierBlock;
 import net.valdora.savedata.flaggedbarrier.FlaggedBarrierItem;
 
 public class ModBlocks {
-    public static final Block FLAGGED_BARRIER = new FlaggedBarrierBlock(
-            FabricBlockSettings
+    public static final Block FLAGGED_BARRIER = new FlaggedBarrierBlock(FabricBlockSettings
                     .create()
                     .mapColor(MapColor.CLEAR)
-                    .strength(-1.0F, 3600000.0F) // unbreakable
+                    .strength(-1.0F, 3600000.0F)
                     .noBlockBreakParticles()
                     .nonOpaque()
                     .luminance(state -> 0)
-                    .sounds(BlockSoundGroup.STONE)
-    );
+                    .sounds(BlockSoundGroup.STONE));
 
     public static void register() {
         registerBlock("flagged_barrier", FLAGGED_BARRIER);

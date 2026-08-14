@@ -9,22 +9,21 @@ import java.util.Objects;
 public class BattleAIFactory implements SimpleFactory<BattleAI> {
     private final String battleFormat;
     private final String battleAI;
-
+    
     public BattleAIFactory(String battleFormat, String battleAI) {
         this.battleFormat = battleFormat;
         this.battleAI = battleAI;
     }
-
+    
     @Override
     public BattleAI create() {
-        // StrongBattleAI have issues with Double/Triple battles
         if (Objects.equals(battleFormat, "single")) {
             return new SingleBattleAIFactory().create();
         } else {
             return new NonSingleBattleAIFactory().create();
         }
     }
-
+    
     private class SingleBattleAIFactory implements SimpleFactory<BattleAI> {
         @Override
         public BattleAI create() {
@@ -41,7 +40,7 @@ public class BattleAIFactory implements SimpleFactory<BattleAI> {
             };
         }
     }
-
+    
     private class NonSingleBattleAIFactory implements SimpleFactory<BattleAI> {
         @Override
         public BattleAI create() {

@@ -27,22 +27,22 @@ import java.util.Map;
 public class WarpManager {
     private static final String WARP_SAVE_PATH = "valdora/warps/";
     private static final Gson GSON = new GsonBuilder().create();
-
+    
     private static final Map<String, Warp> WARPS = new HashMap<>();
-
+    
     public static void register() {
         load();
-
+        
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             CreateWarpCommand.register(dispatcher);
             WarpCommand.register(dispatcher);
             DeleteWarpCommand.register(dispatcher);
         }));
     }
-
+    
     public static void load() {
         WARPS.clear();
-
+        
         try {
             Path savePath = Paths.get(WARP_SAVE_PATH);
             if (!Files.exists(savePath)) {
@@ -50,7 +50,7 @@ public class WarpManager {
                 Valdora.LOGGER.info("Created warp save directory: " + savePath);
                 return;
             }
-
+            
             Files.walk(savePath)
                     .filter(path -> path.toString().endsWith(".json"))
                     .forEach(path -> {
@@ -69,20 +69,20 @@ public class WarpManager {
                         }
                     });
             Valdora.LOGGER.info("Successfully registered " + WARPS.size() + " warps");
-
+            
         } catch (IOException e) {
             Valdora.LOGGER.error("Failed to access warp save directory: " + e.getMessage());
         }
     }
-
+    
     public static Map<String, Warp> getWarps() {
         return WARPS;
     }
-
+    
     public static boolean warpExists(String id) {
         return WARPS.containsKey(id);
     }
-
+    
     public static void createWarp(ServerPlayerEntity player, String id) {
         Warp newWarp = new Warp();
         newWarp.id = id;
@@ -92,12 +92,12 @@ public class WarpManager {
         newWarp.z = Math.floor(player.getPos().z) + 0.5;
         newWarp.yaw = player.getYaw();
         newWarp.pitch = player.getPitch();
-
+        
         WARPS.put(newWarp.id, newWarp);
         saveWarp(newWarp);
         player.sendMessage(Text.literal("Warp '" + id + "' created!"));
     }
-
+    
     private static void saveWarp(Warp warp) {
         Path filePath = Paths.get(WARP_SAVE_PATH, warp.id + ".json");
         try {
@@ -107,36 +107,36 @@ public class WarpManager {
             Valdora.LOGGER.error("Failed to save warp '" + warp.id + "' to file: " + e.getMessage());
         }
     }
-
+    
     public static void warpPlayer(ServerPlayerEntity player, String id) {
         if (!warpExists(id)) {
             Valdora.LOGGER.info("Warp with id '" + id + "' does not exist!");
             return;
         }
-
+        
         Warp warp = WARPS.get(id);
         MinecraftServer server = player.getServer();
         if (server == null) {
             Valdora.LOGGER.error("Server is null, cannot warp player!");
         }
-
+        
         RegistryKey<World> worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.tryParse(warp.world));
         ServerWorld targetWorld = server.getWorld(worldKey);
         if (targetWorld == null) {
             Valdora.LOGGER.error("Target world ' " + warp.world + "' not found for warp '" + id + "'");
             return;
         }
-
+        
         player.teleport(targetWorld, warp.x, warp.y, warp.z, warp.yaw, warp.pitch);
         player.sendMessage(Text.literal("Warped to " + id));
     }
-
+    
     public static void deleteWarp(ServerPlayerEntity player, String id) {
         if (!warpExists(id)) {
             Valdora.LOGGER.info("Warp with id '" + id + "' does not exist!");
             return;
         }
-
+        
         WARPS.remove(id);
         Path filePath = Paths.get(WARP_SAVE_PATH, id + ".json");
         try {
@@ -145,7 +145,7 @@ public class WarpManager {
         } catch (IOException e) {
             Valdora.LOGGER.error("Failed to delete warp file for '" + id + "': " + e.getMessage());
         }
-
+        
         player.sendMessage(Text.literal("Deleted warp '" + id + "'"));
     }
 }

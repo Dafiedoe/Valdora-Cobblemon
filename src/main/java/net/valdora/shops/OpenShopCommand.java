@@ -21,7 +21,7 @@ public class OpenShopCommand {
                 }
                 return builder.buildFuture();
             };
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
                 .then(CommandManager.literal("openshop")
@@ -31,16 +31,16 @@ public class OpenShopCommand {
                                 .then(CommandManager.argument("player", EntityArgumentType.player())
                                         .executes(ctx -> execute(ctx, StringArgumentType.getString(ctx, "shopid")))))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context, String shopId) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-
+        
         ConfigShop shop = ShopManager.getShopById(shopId);
         if (shop == null) {
             Valdora.LOGGER.warn("Shop: " + shop.id + " not found!");
             return 0;
         }
-
+        
         OpenShopS2CPayload payload = new OpenShopS2CPayload(shop, player);
         ServerPlayNetworking.send(player, payload);
         return 1;

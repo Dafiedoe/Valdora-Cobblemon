@@ -25,21 +25,19 @@ public class TrainerBattleEndEvent {
     public static void register() {
         CobblemonEvents.BATTLE_VICTORY.subscribe(Priority.NORMAL, TrainerBattleEndEvent::battleVictory);
     }
-
+    
     private static Unit battleVictory(BattleVictoryEvent battleVictoryEvent) {
         PokemonBattle battle = battleVictoryEvent.getBattle();
-
-        battleVictoryEvent.getLosers().stream()
-                .filter(actor -> actor instanceof PlayerBattleActor)
-                .map(actor -> ((PlayerBattleActor) actor).getEntity())
+        
+        battleVictoryEvent.getLosers().stream().filter(actor -> actor instanceof PlayerBattleActor).map(actor -> ((PlayerBattleActor) actor).getEntity())
                 .forEach(entity -> CheckPointManager.recallPlayerToCheckPoint(entity, true));
-
+        
         BattleActor actor1 = battle.getSide1().getActors()[0];
         BattleActor actor2 = battle.getSide2().getActors()[0];
-
+        
         PlayerBattleActor playerActor = null;
         PokemonTeamBattleActor trainerActor = null;
-
+        
         if (actor1 instanceof PlayerBattleActor && actor2 instanceof PokemonTeamBattleActor) {
             playerActor = (PlayerBattleActor) actor1;
             trainerActor = (PokemonTeamBattleActor) actor2;
@@ -47,12 +45,12 @@ public class TrainerBattleEndEvent {
             playerActor = (PlayerBattleActor) actor2;
             trainerActor = (PokemonTeamBattleActor) actor1;
         }
-
+        
         if (playerActor != null && trainerActor != null) {
             boolean playerWon = battleVictoryEvent.getWinners().contains(playerActor);
             String status = playerWon ? "victory" : "defeat";
             String dialogSuffix = playerWon ? "_onvictory" : "_ondefeat";
-
+            
             UUID playerUuid = playerActor.getEntity().getUuid();
             PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(playerActor.getEntity().getServer(), playerUuid);
             TrainerConfig trainer = TrainerManager.getTrainerById(trainerActor.getId());
@@ -66,10 +64,10 @@ public class TrainerBattleEndEvent {
                 progress.addPokedollars(trainer.pokedollarReward);
                 playerActor.getEntity().sendMessage(Text.literal("You received ₽" + trainer.pokedollarReward + " for winning!"));
                 PlayerSaveDataManager.INSTANCE.saveProgress(playerActor.getEntity().getServer(), playerUuid);
-
+                
                 QuestManager.updateQuestProgress(playerActor.getEntity(), ObjectiveType.DEFEAT_TRAINER, trainer);
             }
-
+            
             String command = "easy_npc dialog open " + trainerActor.getNpcUuid() + " " + playerActor.getEntity().getName().getString() + " " + flag + dialogSuffix;
             ServerCommandSource source = playerActor.getEntity().getServer().getCommandSource().withLevel(2);
             try {
@@ -78,10 +76,10 @@ public class TrainerBattleEndEvent {
             } catch (Exception e) {
                 Valdora.LOGGER.error("Failed to execute command: {}", command, e);
             }
-
+            
             trainerActor.getEntity().discard();
         }
-
+        
         return Unit.INSTANCE;
     }
 }

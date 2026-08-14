@@ -13,10 +13,10 @@ import net.valdora.quests.ObjectiveType;
 
 public class DeliverItemObjective extends Objective {
     public Item item;
-
+    
     public DeliverItemObjective(String title, String description, String questId, JsonObject json) {
         super(title, description, ObjectiveType.DELIVER_ITEM, questId);
-
+        
         String itemIdStr = json.get("item_id").getAsString();
         Identifier itemIdentifier = Identifier.tryParse(itemIdStr);
         if (itemIdentifier != null) {
@@ -26,23 +26,23 @@ public class DeliverItemObjective extends Objective {
             item = null;
         }
     }
-
+    
     @Override
     public boolean handleObjectiveUpdate(ActiveQuest activeQuest, ServerPlayerEntity player, Object data) {
         if (item == null) {
             return false;
         }
-
+        
         int amount = player.getInventory().count(item);
         if (amount == 0) {
             return false;
         }
-
+        
         int delivered = Math.min(amount, count - activeQuest.count);
         if (delivered <= 0) {
             return false;
         }
-
+        
         int toRemove = delivered;
         for (int i = 0; i < player.getInventory().size(); i++) {
             ItemStack stack = player.getInventory().getStack(i);
@@ -55,9 +55,9 @@ public class DeliverItemObjective extends Objective {
                 }
             }
         }
-
+        
         activeQuest.count += delivered;
-
+        
         return activeQuest.count >= count;
     }
 }

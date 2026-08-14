@@ -6,8 +6,8 @@ import java.util.UUID;
 
 public interface BattleParticipant {
     String getName();
-
+    
     UUID getUuid();
-
+    
     PartyStore getParty();
 }

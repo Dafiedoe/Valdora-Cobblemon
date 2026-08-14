@@ -49,24 +49,24 @@ import java.util.stream.Collectors;
 public class PlayerSaveDataManager {
     public static PlayerSaveDataManager INSTANCE;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
+    
     private static final String PLAYER_SAVE_DATA_PATH = "valdora/playerdata/";
-
+    
     private final Map<UUID, Map<String, PlayerStoryProgress>> loadedProfiles = new HashMap<>();
     private final Map<UUID, String> currentProfiles = new HashMap<>();
-
+    
     public static final Identifier OPEN_PROFILE_GUI = Identifier.of("valdora", "open_profile_gui");
     public static final Identifier CREATE_PROFILE = Identifier.of("valdora", "create_profile");
     public static final Identifier SELECT_PROFILE = Identifier.of("valdora", "select_profile");
     public static final Identifier DELETE_PROFILE = Identifier.of("valdora", "delete_profile");
     public static final Identifier PROFILE_CREATION_RESULT = Identifier.of("valdora", "profile_creation_result");
-
+    
     public PlayerSaveDataManager() {
         if (INSTANCE == null) {
             INSTANCE = this;
         }
     }
-
+    
     public void register() {
         PayloadTypeRegistry.playC2S().register(CreateProfilePayload.ID, CreateProfilePayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SelectProfilePayload.ID, SelectProfilePayload.CODEC);
@@ -74,31 +74,31 @@ public class PlayerSaveDataManager {
         PayloadTypeRegistry.playS2C().register(OpenProfileGuiPayload.ID, OpenProfileGuiPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ProfileCreationResultPayload.ID, ProfileCreationResultPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(PlayerFlagsS2CPayload.PAYLOAD_ID, PlayerFlagsS2CPayload.CODEC);
-
+        
         ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
                 handlePlayerDisconnect(player);
             }
         });
-
+        
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.player;
             List<String> profiles = getProfiles(player.getServer(), player.getUuid());
             ServerPlayNetworking.send(player, new OpenProfileGuiPayload(profiles));
         });
-
+        
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ServerPlayerEntity player = handler.player;
             handlePlayerDisconnect(player);
         });
-
+        
         ServerPlayNetworking.registerGlobalReceiver(CreateProfilePayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             context.server().execute(() -> {
                 createProfile(player.getServer(), player.getUuid(), payload.profileName(), player);
             });
         });
-
+        
         ServerPlayNetworking.registerGlobalReceiver(SelectProfilePayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             try {
@@ -112,9 +112,9 @@ public class PlayerSaveDataManager {
                     } catch (Throwable t) {
                         Valdora.LOGGER.error("Error teleporting player: {}", t.getMessage(), t);
                     }
-
+                    
                     player.getInventory().clear();
-
+                    
                     List<PlayerStoryProgress.SimpleItem> mainList = progress.getMainItems();
                     for (int i = 0; i < mainList.size() && i < player.getInventory().main.size(); i++) {
                         PlayerStoryProgress.SimpleItem si = mainList.get(i);
@@ -128,7 +128,7 @@ public class PlayerSaveDataManager {
                             Valdora.LOGGER.error("Error restoring main inventory item: {}", ex.getMessage(), ex);
                         }
                     }
-
+                    
                     List<PlayerStoryProgress.SimpleItem> armorList = progress.getArmorItems();
                     for (int i = 0; i < armorList.size() && i < player.getInventory().armor.size(); i++) {
                         PlayerStoryProgress.SimpleItem si = armorList.get(i);
@@ -142,7 +142,7 @@ public class PlayerSaveDataManager {
                             Valdora.LOGGER.error("Error restoring armor item: {}", ex.getMessage(), ex);
                         }
                     }
-
+                    
                     List<PlayerStoryProgress.SimpleItem> off = progress.getOffhandItems();
                     if (!off.isEmpty() && player.getInventory().offHand.size() > 0) {
                         PlayerStoryProgress.SimpleItem si = off.get(0);
@@ -156,13 +156,13 @@ public class PlayerSaveDataManager {
                             Valdora.LOGGER.error("Error restoring offhand item: {}", ex.getMessage(), ex);
                         }
                     }
-
+                    
                     PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
                     party.clearParty();
-
+                    
                     if (progress.getParty() != null && !progress.getParty().isEmpty()) {
                         JsonArray partyJson = JsonParser.parseString(progress.getParty()).getAsJsonArray();
-
+                        
                         for (int slot = 0; slot < Math.min(6, partyJson.size()); slot++) {
                             JsonElement element = partyJson.get(slot);
                             if (!element.isJsonNull() && element.isJsonObject()) {
@@ -174,7 +174,7 @@ public class PlayerSaveDataManager {
                                 pokemon.setIV(Stats.ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
                                 pokemon.setIV(Stats.HP, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
                                 pokemon.setIV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
-
+                                
                                 pokemon.setEV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
                                 pokemon.setEV(Stats.SPEED, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
                                 pokemon.setEV(Stats.DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
@@ -185,13 +185,13 @@ public class PlayerSaveDataManager {
                             }
                         }
                     }
-
+                    
                     PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
                     pc.clearPC();
-
+                    
                     if (progress.getPc() != null && !progress.getPc().isEmpty()) {
                         JsonArray pcJson = JsonParser.parseString(progress.getPc()).getAsJsonArray();
-
+                        
                         for (int boxNum = 0; boxNum < pc.getBoxes().size(); boxNum++) {
                             JsonArray boxJson = pcJson.get(boxNum).getAsJsonArray();
                             int occupiedCount = pc.getBoxes().get(boxNum).getNonEmptySlots() != null ? pc.getBoxes().get(boxNum).getNonEmptySlots().size() : 0;
@@ -202,27 +202,27 @@ public class PlayerSaveDataManager {
                                 if (!element.isJsonNull() && element.isJsonObject()) {
                                     Pokemon pokemon = new Pokemon();
                                     pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
-
+                                    
                                     pokemon.setIV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
                                     pokemon.setIV(Stats.SPEED, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
                                     pokemon.setIV(Stats.DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
                                     pokemon.setIV(Stats.ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
                                     pokemon.setIV(Stats.HP, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
                                     pokemon.setIV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
-
+                                    
                                     pokemon.setEV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
                                     pokemon.setEV(Stats.SPEED, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
                                     pokemon.setEV(Stats.DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
                                     pokemon.setEV(Stats.ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
                                     pokemon.setEV(Stats.HP, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
                                     pokemon.setEV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
-
+                                    
                                     pc.set(new PCPosition(boxNum, slot), pokemon);
                                 }
                             }
                         }
                     }
-
+                    
                     if (!progress.getTrackingQuest().isEmpty()) {
                         Quest quest = QuestManager.getQuestById(progress.getTrackingQuest());
                         ActiveQuest activeQuest = progress.getActiveQuestById(progress.getTrackingQuest());
@@ -235,7 +235,7 @@ public class PlayerSaveDataManager {
                             }
                         }
                     }
-
+                    
                     player.closeHandledScreen();
                     sendFlagsToClient(player);
                 });
@@ -243,7 +243,7 @@ public class PlayerSaveDataManager {
                 context.server().execute(() -> player.sendMessage(Text.literal(e.getMessage()), false));
             }
         });
-
+        
         ServerPlayNetworking.registerGlobalReceiver(DeleteProfilePayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             try {
@@ -257,7 +257,7 @@ public class PlayerSaveDataManager {
                 context.server().execute(() -> player.sendMessage(Text.literal(e.getMessage()), false));
             }
         });
-
+        
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(CommandManager.literal("valdora")
                     .then(CommandManager.literal("checkflag")
@@ -326,7 +326,7 @@ public class PlayerSaveDataManager {
                                     }))));
         });
     }
-
+    
     private void handlePlayerDisconnect(ServerPlayerEntity player) {
         UUID uuid = player.getUuid();
         String current = currentProfiles.get(uuid);
@@ -335,7 +335,7 @@ public class PlayerSaveDataManager {
             PlayerStoryProgress progress = playerProfs.computeIfAbsent(current, k -> loadProfile(player.getServer(), uuid, current));
             progress.setCoords(player.getX(), player.getY(), player.getZ());
             progress.setYawPitch(player.getYaw(), player.getPitch());
-
+            
             List<PlayerStoryProgress.SimpleItem> mainOut = new ArrayList<>();
             for (int i = 0; i < player.getInventory().main.size(); i++) {
                 ItemStack s = player.getInventory().main.get(i);
@@ -344,7 +344,7 @@ public class PlayerSaveDataManager {
                     mainOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
-
+            
             List<PlayerStoryProgress.SimpleItem> armorOut = new ArrayList<>();
             for (int i = 0; i < player.getInventory().armor.size(); i++) {
                 ItemStack s = player.getInventory().armor.get(i);
@@ -353,7 +353,7 @@ public class PlayerSaveDataManager {
                     armorOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
-
+            
             List<PlayerStoryProgress.SimpleItem> offOut = new ArrayList<>();
             for (int i = 0; i < player.getInventory().offHand.size(); i++) {
                 ItemStack s = player.getInventory().offHand.get(i);
@@ -362,11 +362,11 @@ public class PlayerSaveDataManager {
                     offOut.add(new PlayerStoryProgress.SimpleItem(id.toString(), s.getCount(), i));
                 }
             }
-
+            
             progress.setMainItems(mainOut);
             progress.setArmorItems(armorOut);
             progress.setOffhandItems(offOut);
-
+            
             PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
             JsonArray partyJson = new JsonArray();
             for (int slot = 0; slot < party.size(); slot++) {
@@ -377,9 +377,9 @@ public class PlayerSaveDataManager {
                     partyJson.add(JsonNull.INSTANCE);
                 }
             }
-
+            
             progress.setParty(partyJson.toString());
-
+            
             PCStore pc = Cobblemon.INSTANCE.getStorage().getPC(player);
             JsonArray pcJson = new JsonArray();
             int numBoxes = pc.getBoxes().size();
@@ -398,17 +398,17 @@ public class PlayerSaveDataManager {
                 }
                 pcJson.add(boxJson);
             }
-
+            
             progress.setPc(pcJson.toString());
-
+            
             saveProfile(player.getServer(), uuid, current, progress);
         }
-
+        
         saveProgress(player.getServer(), uuid);
         loadedProfiles.remove(uuid);
         currentProfiles.remove(uuid);
     }
-
+    
     public PlayerStoryProgress getProgress(MinecraftServer server, UUID playerUuid) {
         String current = currentProfiles.get(playerUuid);
         if (current == null) {
@@ -417,15 +417,15 @@ public class PlayerSaveDataManager {
         Map<String, PlayerStoryProgress> playerProfs = loadedProfiles.computeIfAbsent(playerUuid, k -> new HashMap<>());
         return playerProfs.computeIfAbsent(current, k -> loadProfile(server, playerUuid, current));
     }
-
+    
     private PlayerStoryProgress loadProfile(MinecraftServer server, UUID playerUuid, String profileName) {
         Path playerDir = getPlayerDir(server, playerUuid);
         Path file = playerDir.resolve(profileName + ".json");
         if (file.toFile().exists()) {
             try (Reader reader = new FileReader(file.toFile())) {
-                Type type = new TypeToken<Map<String, Object>>() {}.getType();
+                Type type = new TypeToken<Map<String, Object>>() { }.getType();
                 Map<String, Object> json = gson.fromJson(reader, type);
-
+                
                 Map<String, String> flags = new HashMap<>();
                 Object flagsObj = json.get("flags");
                 if (flagsObj instanceof Map) {
@@ -436,7 +436,7 @@ public class PlayerSaveDataManager {
                         }
                     }
                 }
-
+                
                 double x = 0, y = 0, z = 0;
                 Object xo = json.get("x");
                 Object yo = json.get("y");
@@ -444,21 +444,21 @@ public class PlayerSaveDataManager {
                 if (xo instanceof Number) x = ((Number) xo).doubleValue();
                 if (yo instanceof Number) y = ((Number) yo).doubleValue();
                 if (zo instanceof Number) z = ((Number) zo).doubleValue();
-
+                
                 float yaw = 0f, pitch = 0f;
                 Object yawObj = json.get("yaw");
                 Object pitchObj = json.get("pitch");
                 if (yawObj instanceof Number) yaw = ((Number) yawObj).floatValue();
                 if (pitchObj instanceof Number) pitch = ((Number) pitchObj).floatValue();
-
+                
                 List<PlayerStoryProgress.SimpleItem> main = new ArrayList<>();
                 List<PlayerStoryProgress.SimpleItem> armor = new ArrayList<>();
                 List<PlayerStoryProgress.SimpleItem> offhand = new ArrayList<>();
-
+                
                 Object invObj = json.get("inventory");
                 if (invObj instanceof Map) {
                     Map<?, ?> invMap = (Map<?, ?>) invObj;
-
+                    
                     Object mainObj = invMap.get("main");
                     if (mainObj instanceof List) {
                         for (Object entry : (List<?>) mainObj) {
@@ -470,18 +470,18 @@ public class PlayerSaveDataManager {
                             Object cnt = m.get("count");
                             if (cnt instanceof Number) count = ((Number) cnt).intValue();
                             else if (cnt != null) {
-                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
+                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) { }
                             }
                             int slot = 0;
                             Object slotObj = m.get("slot");
                             if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
                             else if (slotObj != null) {
-                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) { }
                             }
                             if (!id.isEmpty()) main.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
-
+                    
                     Object armorObj = invMap.get("armor");
                     if (armorObj instanceof List) {
                         for (Object entry : (List<?>) armorObj) {
@@ -493,18 +493,18 @@ public class PlayerSaveDataManager {
                             Object cnt = m.get("count");
                             if (cnt instanceof Number) count = ((Number) cnt).intValue();
                             else if (cnt != null) {
-                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
+                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) { }
                             }
                             int slot = 0;
                             Object slotObj = m.get("slot");
                             if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
                             else if (slotObj != null) {
-                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) { }
                             }
                             if (!id.isEmpty()) armor.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
-
+                    
                     Object offObj = invMap.get("offhand");
                     if (offObj instanceof List) {
                         for (Object entry : (List<?>) offObj) {
@@ -516,53 +516,53 @@ public class PlayerSaveDataManager {
                             Object cnt = m.get("count");
                             if (cnt instanceof Number) count = ((Number) cnt).intValue();
                             else if (cnt != null) {
-                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) {}
+                                try { count = Integer.parseInt(cnt.toString()); } catch (Exception ignored) { }
                             }
                             int slot = 0;
                             Object slotObj = m.get("slot");
                             if (slotObj instanceof Number) slot = ((Number) slotObj).intValue();
                             else if (slotObj != null) {
-                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) {}
+                                try { slot = Integer.parseInt(slotObj.toString()); } catch (Exception ignored) { }
                             }
                             if (!id.isEmpty()) offhand.add(new PlayerStoryProgress.SimpleItem(id, count, slot));
                         }
                     }
                 }
-
+                
                 String party = "";
                 Object partyObj = json.get("party");
                 if (partyObj instanceof String) {
                     party = (String) partyObj;
                 }
-
+                
                 String pc = "";
                 Object pcObj = json.get("pc");
                 if (pcObj instanceof String) {
                     pc = (String) pcObj;
                 }
-
+                
                 String cp = "";
                 Object cpObj = json.get("lastcheckpoint");
                 if (cpObj instanceof String) {
                     cp = (String) cpObj;
                 }
-
+                
                 int pokedollars = 0;
                 Object pokedollarsObj = json.get("pokedollars");
                 if (pokedollarsObj instanceof Double) {
                     pokedollars = (int) Math.floor((Double) pokedollarsObj);
                 }
-
+                
                 String area = "";
                 Object areaObj = json.get("lastvisitedarea");
                 if (areaObj instanceof String) {
                     area = (String) areaObj;
                 }
-
+                
                 List<String> completedQuests = new ArrayList<>();
                 Object completedQuestsObj = json.get("completedQuests");
                 if (completedQuestsObj instanceof List) {
-                    for (Object entry: (List<?>) completedQuestsObj) {
+                    for (Object entry : (List<?>) completedQuestsObj) {
                         String value = "";
                         if (entry instanceof String) {
                             value = (String) entry;
@@ -574,7 +574,7 @@ public class PlayerSaveDataManager {
                         }
                     }
                 }
-
+                
                 List<ActiveQuest> activeQuests = new ArrayList<>();
                 Object activeQuestsObj = json.get("activeQuests");
                 if (activeQuestsObj instanceof List) {
@@ -582,29 +582,29 @@ public class PlayerSaveDataManager {
                         if (!(entry instanceof Map)) continue;
                         @SuppressWarnings("unchecked")
                         Map<String, Object> m = (Map<String, Object>) entry;
-
+                        
                         String questId = m.getOrDefault("questId", "").toString();
-
+                        
                         int objectiveIndex = 0;
                         Object objIndexObj = m.get("objectiveIndex");
                         if (objIndexObj instanceof Number) objectiveIndex = ((Number) objIndexObj).intValue();
                         else if (objIndexObj != null) {
-                            try { objectiveIndex = Integer.parseInt(objIndexObj.toString()); } catch (Exception ignored) {}
+                            try { objectiveIndex = Integer.parseInt(objIndexObj.toString()); } catch (Exception ignored) { }
                         }
-
+                        
                         int count = 0;
                         Object countObj = m.get("count");
                         if (countObj instanceof Number) count = ((Number) countObj).intValue();
                         else if (countObj != null) {
-                            try { count = Integer.parseInt(countObj.toString()); } catch (Exception ignored) {}
+                            try { count = Integer.parseInt(countObj.toString()); } catch (Exception ignored) { }
                         }
-
+                        
                         if (!questId.isEmpty()) {
                             activeQuests.add(new ActiveQuest(questId, objectiveIndex, count));
                         }
                     }
                 }
-
+                
                 String trackingQuest = "";
                 Object trackingQuestObj = json.get("trackingQuest");
                 if (trackingQuestObj instanceof String) {
@@ -622,7 +622,7 @@ public class PlayerSaveDataManager {
                 if (adminRepelObj instanceof Boolean) {
                     adminRepel = (Boolean) adminRepelObj;
                 }
-
+                
                 return new PlayerStoryProgress(flags, x, y, z, yaw, pitch, main, armor, offhand, party, pc, cp, pokedollars, area, completedQuests, activeQuests, trackingQuest, repelSteps, adminRepel);
             } catch (IOException e) {
                 Valdora.LOGGER.error("Error loading profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
@@ -630,12 +630,12 @@ public class PlayerSaveDataManager {
         }
         return new PlayerStoryProgress();
     }
-
+    
     private void saveProfile(MinecraftServer server, UUID playerUuid, String profileName, PlayerStoryProgress progress) {
         Path playerDir = getPlayerDir(server, playerUuid);
         playerDir.toFile().mkdirs();
         Path file = playerDir.resolve(profileName + ".json");
-
+        
         try (Writer writer = new FileWriter(file.toFile())) {
             Map<String, Object> json = new HashMap<>();
             json.put("flags", progress.getFlags());
@@ -644,35 +644,34 @@ public class PlayerSaveDataManager {
             json.put("z", progress.getZ());
             json.put("yaw", progress.getYaw());
             json.put("pitch", progress.getPitch());
-
+            
             json.put("inventory", Map.of(
                     "main", progress.getMainItems(),
                     "armor", progress.getArmorItems(),
-                    "offhand", progress.getOffhandItems()
-            ));
-
+                    "offhand", progress.getOffhandItems()));
+            
             json.put("party", progress.getParty());
             json.put("pc", progress.getPc());
-
+            
             json.put("lastcheckpoint", progress.getLastCheckPoint());
-
+            
             json.put("pokedollars", progress.getPokedollars());
-
+            
             json.put("lastvisitedarea", progress.getLastAreaVisited());
-
+            
             json.put("completedQuests", progress.getCompletedQuests());
             json.put("activeQuests", progress.getActiveQuests());
             json.put("trackingQuest", progress.getTrackingQuest());
             
             json.put("repelSteps", progress.getRepelSteps());
             json.put("adminRepel", progress.getAdminRepel());
-
+            
             gson.toJson(json, writer);
         } catch (IOException e) {
             Valdora.LOGGER.error("Error saving profile {} for player {}: {}", profileName, playerUuid, e.getMessage(), e);
         }
     }
-
+    
     public void saveProgress(MinecraftServer server, UUID playerUuid) {
         String current = currentProfiles.get(playerUuid);
         if (current != null) {
@@ -686,7 +685,7 @@ public class PlayerSaveDataManager {
         }
         sendFlagsToClient(server.getPlayerManager().getPlayer(playerUuid));
     }
-
+    
     private void sendFlagsToClient(ServerPlayerEntity player) {
         try {
             Map<String, String> flags;
@@ -703,11 +702,11 @@ public class PlayerSaveDataManager {
             Valdora.LOGGER.error("Error sending flags to client for player {}: {}", player.getUuid(), t.getMessage(), t);
         }
     }
-
+    
     private Path getPlayerDir(MinecraftServer server, UUID playerUuid) {
         return Paths.get(PLAYER_SAVE_DATA_PATH + playerUuid.toString());
     }
-
+    
     public void createProfile(MinecraftServer server, UUID playerUuid, String profileName, ServerPlayerEntity player) {
         if (profileName == null || profileName.trim().isEmpty()) {
             ServerPlayNetworking.send(player, new ProfileCreationResultPayload(false, "Profile name cannot be empty"));
@@ -730,7 +729,7 @@ public class PlayerSaveDataManager {
         ServerPlayNetworking.send(player, new OpenProfileGuiPayload(getProfiles(server, playerUuid)));
         Valdora.LOGGER.info("Created profile '{}' for player {}", profileName, playerUuid);
     }
-
+    
     public void selectProfile(MinecraftServer server, UUID playerUuid, String profileName) {
         Path file = getPlayerDir(server, playerUuid).resolve(profileName + ".json");
         if (!file.toFile().exists()) {
@@ -743,7 +742,7 @@ public class PlayerSaveDataManager {
             sendFlagsToClient(player);
         }
     }
-
+    
     public void deleteProfile(MinecraftServer server, UUID playerUuid, String profileName) {
         Path file = getPlayerDir(server, playerUuid).resolve(profileName + ".json");
         if (file.toFile().exists()) file.toFile().delete();
@@ -756,7 +755,7 @@ public class PlayerSaveDataManager {
             if (player != null) sendFlagsToClient(player);
         }
     }
-
+    
     public List<String> getProfiles(MinecraftServer server, UUID playerUuid) {
         Path playerDir = getPlayerDir(server, playerUuid);
         File dir = playerDir.toFile();
@@ -768,73 +767,58 @@ public class PlayerSaveDataManager {
                 .map(f -> f.getName().substring(0, f.getName().length() - 5))
                 .collect(Collectors.toList());
     }
-
+    
     public record OpenProfileGuiPayload(List<String> profiles) implements CustomPayload {
         public static final Id<OpenProfileGuiPayload> ID = new Id<>(OPEN_PROFILE_GUI);
-        public static final PacketCodec<RegistryByteBuf, OpenProfileGuiPayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.STRING.collect(PacketCodecs.toList()), OpenProfileGuiPayload::profiles,
-                OpenProfileGuiPayload::new
-        );
-
+        public static final PacketCodec<RegistryByteBuf, OpenProfileGuiPayload> CODEC = PacketCodec.tuple(PacketCodecs.STRING.collect(PacketCodecs.toList()), OpenProfileGuiPayload::profiles, OpenProfileGuiPayload::new);
+        
         @Override
         public Id<? extends CustomPayload> getId() {
             return ID;
         }
     }
-
+    
     public record CreateProfilePayload(String profileName) implements CustomPayload {
         public static final Id<CreateProfilePayload> ID = new Id<>(CREATE_PROFILE);
-        public static final PacketCodec<RegistryByteBuf, CreateProfilePayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.STRING, CreateProfilePayload::profileName,
-                CreateProfilePayload::new
-        );
-
+        public static final PacketCodec<RegistryByteBuf, CreateProfilePayload> CODEC = PacketCodec.tuple(PacketCodecs.STRING, CreateProfilePayload::profileName, CreateProfilePayload::new);
+        
         @Override
         public Id<? extends CustomPayload> getId() {
             return ID;
         }
     }
-
+    
     public record SelectProfilePayload(String profileName) implements CustomPayload {
         public static final Id<SelectProfilePayload> ID = new Id<>(SELECT_PROFILE);
-        public static final PacketCodec<RegistryByteBuf, SelectProfilePayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.STRING, SelectProfilePayload::profileName,
-                SelectProfilePayload::new
-        );
-
+        public static final PacketCodec<RegistryByteBuf, SelectProfilePayload> CODEC = PacketCodec.tuple(PacketCodecs.STRING, SelectProfilePayload::profileName, SelectProfilePayload::new);
+        
         @Override
         public Id<? extends CustomPayload> getId() {
             return ID;
         }
     }
-
+    
     public record DeleteProfilePayload(String profileName) implements CustomPayload {
         public static final Id<DeleteProfilePayload> ID = new Id<>(DELETE_PROFILE);
-        public static final PacketCodec<RegistryByteBuf, DeleteProfilePayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.STRING, DeleteProfilePayload::profileName,
-                DeleteProfilePayload::new
-        );
-
+        public static final PacketCodec<RegistryByteBuf, DeleteProfilePayload> CODEC = PacketCodec.tuple(PacketCodecs.STRING, DeleteProfilePayload::profileName, DeleteProfilePayload::new);
+        
         @Override
         public Id<? extends CustomPayload> getId() {
             return ID;
         }
     }
-
+    
     public record ProfileCreationResultPayload(boolean success, String errorMessage) implements CustomPayload {
         public static final Id<ProfileCreationResultPayload> ID = new Id<>(PROFILE_CREATION_RESULT);
-        public static final PacketCodec<RegistryByteBuf, ProfileCreationResultPayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.BOOL, ProfileCreationResultPayload::success,
-                PacketCodecs.STRING, ProfileCreationResultPayload::errorMessage,
-                ProfileCreationResultPayload::new
-        );
-
+        public static final PacketCodec<RegistryByteBuf, ProfileCreationResultPayload> CODEC = PacketCodec.tuple(PacketCodecs.BOOL, ProfileCreationResultPayload::success,
+                PacketCodecs.STRING, ProfileCreationResultPayload::errorMessage, ProfileCreationResultPayload::new);
+        
         @Override
         public Id<? extends CustomPayload> getId() {
             return ID;
         }
     }
-
+    
     public static class PlayerStoryProgress {
         private final Map<String, String> flags = new HashMap<>();
         private double x = Valdora.WORLD_SPAWN_X;
@@ -855,14 +839,14 @@ public class PlayerSaveDataManager {
         private String trackingQuest;
         private float repelSteps;
         private boolean adminRepel;
-
+        
         public PlayerStoryProgress() {
             trackingQuest = "";
         }
-
+        
         public PlayerStoryProgress(Map<String, String> flags, double x, double y, double z, float yaw, float pitch,
                                    List<SimpleItem> main, List<SimpleItem> armor, List<SimpleItem> offhand, String party, String pc, String cp, int pokedollars,
-                                    String lastAreaVisited, List<String> completedQuests, List<ActiveQuest> activeQuests, String trackingQuest, float repelSteps,
+                                   String lastAreaVisited, List<String> completedQuests, List<ActiveQuest> activeQuests, String trackingQuest, float repelSteps,
                                    boolean adminRepel) {
             this.flags.putAll(flags);
             this.x = x;
@@ -884,53 +868,66 @@ public class PlayerSaveDataManager {
             this.repelSteps = repelSteps;
             this.adminRepel = adminRepel;
         }
-
+        
         public boolean checkFlag(String flag, String value) {
             String currentValue = flags.get(flag);
             return currentValue != null && currentValue.equals(value);
         }
-
+        
         public void setFlag(String flag, String value) {
             flags.put(flag, value);
         }
-
+        
         public void removeFlag(String flag) {
             flags.remove(flag);
         }
-
+        
         public Map<String, String> getFlags() {
             return flags;
         }
-
+        
         public double getX() { return x; }
+        
         public double getY() { return y; }
+        
         public double getZ() { return z; }
-        public void setCoords(double x, double y, double z) { this.x = x; this.y = y; this.z = z; }
-
+        
+        public void setCoords(double x, double y, double z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+        
         public float getYaw() { return yaw; }
+        
         public float getPitch() { return pitch; }
-        public void setYawPitch(float yaw, float pitch) { this.yaw = yaw; this.pitch = pitch; }
-
+        
+        public void setYawPitch(float yaw, float pitch) {
+            this.yaw = yaw;
+            this.pitch = pitch;
+        }
+        
         public String getParty() { return party; }
+        
         public String getPc() { return pc; }
-
+        
         public String getLastCheckPoint() { return lastCheckPoint; }
-
+        
         public int getPokedollars() { return pokedollars; }
-
+        
         public String getLastAreaVisited() { return lastAreaVisited; }
-
+        
         public List<String> getCompletedQuests() { return completedQuests; }
-
+        
         public boolean hasCompletedQuest(String id) {
             for (String quest : completedQuests) {
                 if (quest.equals(id)) return true;
             }
             return false;
         }
-
+        
         public List<ActiveQuest> getActiveQuests() { return activeQuests; }
-
+        
         public ActiveQuest getActiveQuestById(String id) {
             for (ActiveQuest quest : activeQuests) {
                 if (quest.questId.equals(id)) {
@@ -939,21 +936,21 @@ public class PlayerSaveDataManager {
             }
             return null;
         }
-
+        
         public String getTrackingQuest() { return trackingQuest; }
-
+        
         public float getRepelSteps() { return repelSteps; }
         
         public boolean getAdminRepel() { return adminRepel; }
-
+        
         public List<SimpleItem> getMainItems() {
             return new ArrayList<>(main);
         }
-
+        
         public List<SimpleItem> getArmorItems() {
             return new ArrayList<>(armor);
         }
-
+        
         public List<SimpleItem> getOffhandItems() {
             return new ArrayList<>(offhand);
         }
@@ -962,64 +959,64 @@ public class PlayerSaveDataManager {
             main.clear();
             if (items != null) main.addAll(items);
         }
-
+        
         public void setArmorItems(List<SimpleItem> items) {
             armor.clear();
             if (items != null) armor.addAll(items);
         }
-
+        
         public void setOffhandItems(List<SimpleItem> items) {
             offhand.clear();
             if (items != null) offhand.addAll(items);
         }
-
+        
         public void setParty(String party) {
             this.party = party;
         }
-
+        
         public void setPc(String pc) {
             this.pc = pc;
         }
-
+        
         public void setLastCheckPoint(String cp) {
             lastCheckPoint = cp;
         }
-
+        
         public void setPokedollars(int amount) {
             pokedollars = amount;
         }
-
+        
         public void addPokedollars(int amount) {
             pokedollars += amount;
         }
-
+        
         public void subtractPokedollars(int amount) {
             pokedollars -= amount;
             if (pokedollars < 0) pokedollars = 0;
         }
-
+        
         public boolean hasEnoughPokedollars(int amount) {
             return pokedollars >= amount;
         }
-
+        
         public void setLastAreaVisited(String area) {
             lastAreaVisited = area;
         }
-
+        
         public void addCompletedQuest(String id) {
             if (hasCompletedQuest(id)) {
                 Valdora.LOGGER.info("Quest with id: '" + id + "' is already completed!");
                 return;
             }
-
+            
             if (getTrackingQuest().equals(id)) {
                 trackingQuest = "";
             }
-
+            
             activeQuests.remove(getActiveQuestById(id));
             completedQuests.add(id);
         }
-
+        
         public void addActiveQuest(ActiveQuest quest) {
             if (getActiveQuestById(quest.questId) != null) {
                 Valdora.LOGGER.info("This player already has this quest!");
@@ -1027,13 +1024,13 @@ public class PlayerSaveDataManager {
             }
             activeQuests.add(quest);
         }
-
+        
         public void setTrackingQuest(ServerPlayerEntity player, Quest quest) {
             trackingQuest = quest.id;
-
+            
             ActiveQuest activeQuest = getActiveQuestById(quest.id);
             if (activeQuest == null) return;
-
+            
             QuestManager.sendQuestHudUpdate(player, quest, activeQuest.objectiveIndex, activeQuest.count, quest.getObjectiveByIndex(activeQuest.objectiveIndex).count);
             if (quest.getObjectives().get(activeQuest.objectiveIndex) instanceof ReachLocationObjective reachLocationObjective) {
                 QuestManager.sendCompassUpdate(player, new Vec3d(reachLocationObjective.x, reachLocationObjective.y, reachLocationObjective.z), reachLocationObjective.showCompass);
@@ -1045,7 +1042,7 @@ public class PlayerSaveDataManager {
         public void setRepelSteps(float steps) {
             repelSteps = steps;
         }
-
+        
         public void addRepelSteps(float amount) {
             repelSteps += amount;
         }
@@ -1053,12 +1050,12 @@ public class PlayerSaveDataManager {
         public void toggleAdminRepel() {
             adminRepel = !adminRepel;
         }
-
+        
         public static class SimpleItem {
             public String item;
             public int count;
             public int slot;
-
+            
             public SimpleItem(String item, int count, int slot) {
                 this.item = item;
                 this.count = count;

@@ -13,28 +13,21 @@ import net.minecraft.item.ItemStack;
 public class FlaggedBarrierEntityRenderer implements BlockEntityRenderer<FlaggedBarrierEntity> {
     public FlaggedBarrierEntityRenderer(BlockEntityRendererFactory.Context ctx) {
     }
-
+    
     @Override
     public void render(FlaggedBarrierEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         PlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) {
             return;
         }
-
+        
         ItemStack mainHand = player.getMainHandStack();
         if (!(mainHand.getItem() instanceof FlaggedBarrierItem)) {
             return;
         }
-
+        
         BlockState state = entity.getCachedState();
-        MinecraftClient.getInstance().getBlockRenderManager().renderBlock(
-                state,
-                entity.getPos(),
-                entity.getWorld(),
-                matrices,
-                vertexConsumers.getBuffer(RenderLayer.getTranslucent()),
-                false,
-                entity.getWorld().getRandom()
-        );
+        MinecraftClient.getInstance().getBlockRenderManager().renderBlock(state, entity.getPos(), entity.getWorld(), matrices, vertexConsumers.getBuffer(RenderLayer.getTranslucent()), false,
+                entity.getWorld().getRandom());
     }
 }

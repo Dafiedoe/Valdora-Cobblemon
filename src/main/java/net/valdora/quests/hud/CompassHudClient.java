@@ -11,23 +11,23 @@ import net.minecraft.util.math.Vec3d;
 public class CompassHudClient {
     private static Vec3d targetPos = Vec3d.ZERO;
     private static boolean showCompass = false;
-
+    
     public static void register() {
         ClientPlayNetworking.registerGlobalReceiver(CompassTargetPayload.ID, (payload, context) -> {
             CompassTargetPayload compassPayload = payload;
-            targetPos = new Vec3d(compassPayload.x(), compassPayload.y(), compassPayload.z());  // Use helper method
+            targetPos = new Vec3d(compassPayload.x(), compassPayload.y(), compassPayload.z());
             showCompass = compassPayload.showCompass();
         });
     }
-
+    
     public static Vec3d getTargetPos() {
         return targetPos;
     }
-
+    
     public static boolean shouldShowCompass() {
         return showCompass;
     }
-
+    
     public static float getYawToTarget(MinecraftClient client) {
         Vec3d playerPos = client.player.getPos();
         Vec3d target = getTargetPos().relativize(playerPos);

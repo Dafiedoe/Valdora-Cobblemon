@@ -13,32 +13,32 @@ public class RepelItem extends Item {
     public static int DEFAULT_STEPS = 100;
     public static int SUPER_STEPS = 200;
     public static int MAX_STEPS = 250;
-
+    
     private RepelType type;
-
+    
     public RepelItem(Settings settings, RepelType _type) {
         super(settings);
         type = _type;
     }
-
+    
     public int getStepsByType(RepelType type) {
         if (type == RepelType.Default) return DEFAULT_STEPS;
         else if (type == RepelType.Super) return SUPER_STEPS;
         else if (type == RepelType.Max) return MAX_STEPS;
-
+        
         return DEFAULT_STEPS;
     }
-
+    
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         if (!world.isClient) {
             if (user instanceof ServerPlayerEntity serverPlayer) {
                 RepelManager.activateRepel(serverPlayer, getStepsByType(type));
             }
-
+            
             user.sendMessage(Text.literal("A Repel was used!"), true);
-
-            if(!user.getAbilities().creativeMode) {
+            
+            if (!user.getAbilities().creativeMode) {
                 user.getStackInHand(hand).decrement(1);
             }
         }

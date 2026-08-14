@@ -8,24 +8,17 @@ import net.minecraft.client.render.entity.model.EntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 
 public class DummyModel extends EntityModel<DummyEntity> {
-
-    public DummyModel(ModelPart root) {
-        // No parts needed
-    }
-
+    
+    public DummyModel(ModelPart root) { }
+    
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
-        // Empty model (no cuboids or parts)
-        return TexturedModelData.of(modelData, 1, 1);  // Minimal texture size
+        return TexturedModelData.of(modelData, 1, 1);
     }
-
+    
     @Override
-    public void setAngles(DummyEntity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
-        // No angles or animations
-    }
-
+    public void setAngles(DummyEntity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) { }
+    
     @Override
-    public void render(MatrixStack matrices, VertexConsumer vertices, int light, int overlay, int color) {
-        // Render nothing
-    }
+    public void render(MatrixStack matrices, VertexConsumer vertices, int light, int overlay, int color) { }
 }

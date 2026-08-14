@@ -22,26 +22,26 @@ public class AddPokedollarsCommand {
                                 .then(CommandManager.argument("amount", IntegerArgumentType.integer())
                                         .executes(AddPokedollarsCommand::execute)))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity source = context.getSource().getPlayerOrThrow();
-
+        
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         int amount = IntegerArgumentType.getInteger(context, "amount");
-
+        
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
         if (progress == null) {
             Valdora.LOGGER.error(player.getName() + " has no or invalid save data!");
             return 0;
         }
-
+        
         progress.addPokedollars(amount);
-
+        
         PlayerSaveDataManager.INSTANCE.saveProgress(player.getServer(), player.getUuid());
-
+        
         source.sendMessage(Text.literal("Gave " + player.getName().getString() + " ₽" + amount + "!"));
         player.sendMessage(Text.literal("You've gained ₽" + amount + "!"));
-
+        
         return 1;
     }
 }

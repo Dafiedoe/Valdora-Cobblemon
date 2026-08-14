@@ -18,29 +18,25 @@ public class QuestHudRenderer implements HudRenderCallback {
         if (client.player == null || !QuestHudClient.hasActiveQuest()) {
             return;
         }
-
+        
         List<Text> lines = QuestHudClient.getQuestDisplayLines();
         int screenWidth = client.getWindow().getScaledWidth();
         int lineHeight = client.textRenderer.fontHeight;
-        int rightMargin = 10;  // Right margin set to 50px
-
-        // Top margin
+        int rightMargin = 10;
+        
         int y = 60;
-
-        // Calculate max width for right-alignment
+        
         int maxTextWidth = lines.stream().mapToInt(line -> client.textRenderer.getWidth(line)).max().orElse(0);
-        int x = screenWidth - maxTextWidth - rightMargin;  // Right-align: screenWidth - width - margin
-
-        // Draw background semi-transparent rect (covers all lines)
+        int x = screenWidth - maxTextWidth - rightMargin;
+        
         int totalHeight = lines.size() * lineHeight;
-        drawContext.fill(x - 5, y - 5, x + maxTextWidth + 5, y + totalHeight + 5, 0x80000000);  // Black semi-transparent
-
-        // Draw each line (right-aligned)
+        drawContext.fill(x - 5, y - 5, x + maxTextWidth + 5, y + totalHeight + 5, 0x80000000);
+        
         for (int i = 0; i < lines.size(); i++) {
             Text line = lines.get(i);
             int lineWidth = client.textRenderer.getWidth(line);
-            int lineX = screenWidth - lineWidth - rightMargin;  // Per-line right-align if widths vary
-            drawContext.drawText(client.textRenderer, line, lineX, y + (i * lineHeight), 0xFFFFFF, true);  // White text, shadow=true
+            int lineX = screenWidth - lineWidth - rightMargin;
+            drawContext.drawText(client.textRenderer, line, lineX, y + (i * lineHeight), 0xFFFFFF, true);
         }
     }
 }

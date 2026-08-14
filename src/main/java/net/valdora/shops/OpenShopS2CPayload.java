@@ -12,27 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Server -> Client payload that carries ConfigShop data.
- * Uses PacketCodec.of(write, ctor) so we can keep classic PacketByteBuf read/write code.
- */
 public final class OpenShopS2CPayload implements CustomPayload {
-    // Unique identifier for the payload (same on client & server)
     public static final Identifier ID_RAW = Identifier.of(Valdora.MOD_ID, "open_shop");
     public static final CustomPayload.Id<OpenShopS2CPayload> ID = new CustomPayload.Id<>(ID_RAW);
-
-    // codec that (de)serializes via PacketByteBuf using the constructors / write method below
-    public static final PacketCodec<PacketByteBuf, OpenShopS2CPayload> CODEC =
-            PacketCodec.of(OpenShopS2CPayload::write, OpenShopS2CPayload::new);
-
+    
+    public static final PacketCodec<PacketByteBuf, OpenShopS2CPayload> CODEC = PacketCodec.of(OpenShopS2CPayload::write, OpenShopS2CPayload::new);
+    
     public final String shopId;
     public final String title;
     public final List<ItemData> items;
     public final int pokedollars;
-
+    
     public record ItemData(String itemId, int cost) { }
-
-    // Constructor used by PacketCodec when decoding (reads from PacketByteBuf)
+    
     public OpenShopS2CPayload(PacketByteBuf buf) {
         this.shopId = buf.readString();
         this.title = buf.readString();
@@ -46,8 +38,7 @@ public final class OpenShopS2CPayload implements CustomPayload {
         this.items = List.copyOf(list);
         this.pokedollars = buf.readVarInt();
     }
-
-    // Convenience constructor to create a payload from your ConfigShop
+    
     public OpenShopS2CPayload(ConfigShop shop, ServerPlayerEntity player) {
         this.shopId = shop.id == null ? "" : shop.id;
         this.title = shop.title == null ? "" : shop.title;
@@ -61,8 +52,7 @@ public final class OpenShopS2CPayload implements CustomPayload {
         PlayerSaveDataManager.PlayerStoryProgress progress = PlayerSaveDataManager.INSTANCE.getProgress(player.getServer(), player.getUuid());
         this.pokedollars = progress.getPokedollars();
     }
-
-    // Writes this payload into the PacketByteBuf (used by PacketCodec.of's encoder)
+    
     public void write(PacketByteBuf buf) {
         buf.writeString(this.shopId == null ? "" : this.shopId);
         buf.writeString(this.title == null ? "" : this.title);
@@ -73,13 +63,12 @@ public final class OpenShopS2CPayload implements CustomPayload {
         }
         buf.writeVarInt(this.pokedollars);
     }
-
+    
     @Override
     public CustomPayload.Id<? extends CustomPayload> getId() {
         return ID;
     }
-
-    /** Convert to a ConfigShop instance on the client side for easy opening. */
+    
     public ConfigShop toConfigShop() {
         ConfigShop cs = new ConfigShop();
         cs.id = this.shopId;

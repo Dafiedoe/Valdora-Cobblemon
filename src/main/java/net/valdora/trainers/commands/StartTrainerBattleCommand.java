@@ -21,7 +21,7 @@ public class StartTrainerBattleCommand {
         TrainerManager.getTrainers().keySet().forEach(builder::suggest);
         return builder.buildFuture();
     };
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(
                 CommandManager.literal("starttrainerbattle")
@@ -32,19 +32,19 @@ public class StartTrainerBattleCommand {
                                         .then(CommandManager.argument("trainerUuid", StringArgumentType.string())
                                                 .executes(StartTrainerBattleCommand::execute)))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity targetPlayer = EntityArgumentType.getPlayer(context, "target");
         String trainerId = StringArgumentType.getString(context, "trainerId");
         String trainerUuid = StringArgumentType.getString(context, "trainerUuid");
-
+        
         TrainerConfig trainer = TrainerManager.getTrainerById(trainerId);
         if (trainer == null) {
             context.getSource().sendError(Text.literal("No trainer found with ID: " + trainerId));
             Valdora.LOGGER.error("No trainer found with ID: {}", trainerId);
             return 0;
         }
-
+        
         PokemonUtils.startTrainerBattle(targetPlayer, trainerId, trainerUuid);
         return 1;
     }

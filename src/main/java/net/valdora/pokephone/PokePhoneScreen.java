@@ -20,39 +20,54 @@ public class PokePhoneScreen extends Screen {
     private static final int BUTTON_WIDTH = 48;
     private static final int COLUMNS = 4;
     private static final int SPACING = 10;
-
+    
     private final List<App> apps = new ArrayList<>();
-
+    
     public PokePhoneScreen() {
         super(Text.literal("PokePhone"));
         apps.add(new ProfileApp());
     }
-
+    
     @Override
     protected void init() {
         int startX = (this.width - (COLUMNS * BUTTON_WIDTH + (COLUMNS - 1) * SPACING)) / 2;
         int startY = (this.height - ((apps.size() / COLUMNS + 1) * BUTTON_HEIGHT)) / 2;
-
+        
         for (int i = 0; i < apps.size(); i++) {
             App app = apps.get(i);
             int col = i % COLUMNS;
             int row = i / COLUMNS;
             int x = startX + col * (BUTTON_WIDTH + SPACING);
             int y = startY + row * (BUTTON_HEIGHT + SPACING);
-
+            
             this.addDrawableChild(new AppButton(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, app, button -> {
                 app.onOpen(MinecraftClient.getInstance().player);
             }));
         }
     }
-
+    
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        context.drawTexture(Identifier.of(Valdora.MOD_ID, "textures/gui/phone_background.png"), 0, 0, 0, 0, this.width, this.height, this.width, this.height);
-
+        context.drawTexture(Identifier.of(Valdora.MOD_ID, "textures/gui/pokephone/phone_background.png"), 0, 0, 0, 0, this.width, this.height, this.width, this.height);
+        
         super.render(context, mouseX, mouseY, delta);
     }
-
+    
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.client != null && this.client.options.inventoryKey.matchesKey(keyCode, scanCode)) {
+            this.close();
+            return true;
+        }
+        
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+    
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    
+    }
+    
     @Override
     public boolean shouldPause() {
         return false;

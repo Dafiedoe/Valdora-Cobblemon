@@ -10,20 +10,12 @@ import net.valdora.Valdora;
 import net.valdora.savedata.flaggedbarrier.GetBarrierCommand;
 
 public final class ModComponents {
-    private ModComponents() {}
-
-    public static final ComponentType<String> FLAG_NAME = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(Valdora.MOD_ID, "flag_name"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
-    );
-
-    public static final ComponentType<String> FLAG_VALUE = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(Valdora.MOD_ID, "flag_value"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
-    );
-
+    private ModComponents() { }
+    
+    public static final ComponentType<String> FLAG_NAME = Registry.register(Registries.DATA_COMPONENT_TYPE, Identifier.of(Valdora.MOD_ID, "flag_name"), ComponentType.<String>builder().codec(Codec.STRING).build());
+    
+    public static final ComponentType<String> FLAG_VALUE = Registry.register(Registries.DATA_COMPONENT_TYPE, Identifier.of(Valdora.MOD_ID, "flag_value"), ComponentType.<String>builder().codec(Codec.STRING).build());
+    
     public static void initialize() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             GetBarrierCommand.register(dispatcher);

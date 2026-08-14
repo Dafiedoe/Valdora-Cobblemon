@@ -19,28 +19,26 @@ import java.util.UUID;
 
 public class TrainerManager {
     private static final String TRAINER_CONFIG_PATH = "config/valdora/trainers/";
-    private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(ConfigPokemon.class, new ConfigPokemonAdapter())
-            .create();
-
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(ConfigPokemon.class, new ConfigPokemonAdapter()).create();
+    
     private static final Map<String, TrainerConfig> TRAINERS = new HashMap<>();
     private static Map<UUID, TrainerConfig> lastBattledTrainer = new HashMap<>();
-
+    
     public static void register() {
         lastBattledTrainer = new HashMap<>();
-
+        
         load();
-
+        
         TrainerBattleEndEvent.register();
-
+        
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             StartTrainerBattleCommand.register(dispatcher);
         }));
     }
-
+    
     public static void load() {
         TRAINERS.clear();
-
+        
         try {
             Path configPath = Paths.get(TRAINER_CONFIG_PATH);
             if (!Files.exists(configPath)) {
@@ -48,7 +46,7 @@ public class TrainerManager {
                 Valdora.LOGGER.info("Created trainer config directory: " + configPath);
                 return;
             }
-
+            
             Files.walk(configPath)
                     .filter(path -> path.toString().endsWith(".json"))
                     .forEach(path -> {
@@ -66,29 +64,29 @@ public class TrainerManager {
                             Valdora.LOGGER.error("Error parsing trainer config from " + path.getFileName() + ": " + e.getMessage());
                         }
                     });
-
+            
             Valdora.LOGGER.info("Successfully registered " + TRAINERS.size() + " trainers");
-
+            
         } catch (IOException e) {
             Valdora.LOGGER.error("Failed to access trainer config directory: " + e.getMessage());
         }
     }
-
+    
     public static Map<String, TrainerConfig> getTrainers() {
         return TRAINERS;
     }
-
+    
     public static TrainerConfig getTrainerById(String id) {
         if (TRAINERS.containsKey(id)) {
             return TRAINERS.get(id);
         }
         return null;
     }
-
+    
     public static void playerStartedBattle(ServerPlayerEntity player, TrainerConfig trainer) {
         lastBattledTrainer.put(player.getUuid(), trainer);
     }
-
+    
     public static TrainerConfig getLastBattle(UUID uuid) {
         if (lastBattledTrainer.containsKey(uuid)) {
             return lastBattledTrainer.get(uuid);

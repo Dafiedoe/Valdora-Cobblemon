@@ -13,42 +13,39 @@ import java.util.UUID;
 public class AbstractPlayerBattleParticipant implements PlayerBattleParticipant {
     private final ServerPlayerEntity player;
     private final PartyStore party;
-
+    
     public AbstractPlayerBattleParticipant(ServerPlayerEntity player, PartyStore party) {
         this.player = player;
         this.party = party;
     }
-
+    
     public UUID getUuid() {
         return player.getUuid();
     }
-
+    
     @Override
     public PartyStore getParty() {
         return party;
     }
-
+    
     public ServerPlayerEntity getPlayerEntity() {
         return player;
     }
-
+    
     @Override
     public String getName() {
         return player.getGameProfile().getName();
     }
-
+    
     @Override
     public BattleActor createBattleActor() {
-        return new PlayerBattleActor(
-                getUuid(),
-                getBattleTeam()
-        );
+        return new PlayerBattleActor(getUuid(), getBattleTeam());
     }
-
+    
     private List<BattlePokemon> getBattleTeam() {
         return party.toBattleTeam(false, false, getLeadingPokemon());
     }
-
+    
     private UUID getLeadingPokemon() {
         return party.toGappyList().stream().filter(Objects::nonNull).filter(pokemon -> !pokemon.isFainted()).toList().get(0).getUuid();
     }

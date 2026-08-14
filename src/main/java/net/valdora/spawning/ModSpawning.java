@@ -13,9 +13,9 @@ public class ModSpawning {
         DeletePokemonAfterBattleEvent.register();
         OnPokemonFainted.register();
         ExpEvent.register();
-
+        
         SpawnPoolManager.load();
-
+        
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             DebugValidSpawnsCommand.register(dispatcher);
         }));

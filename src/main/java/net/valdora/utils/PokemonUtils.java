@@ -1,18 +1,11 @@
 package net.valdora.utils;
 
 import com.cobblemon.mod.common.Cobblemon;
-import com.cobblemon.mod.common.api.battles.model.ai.BattleAI;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.storage.party.PlayerPartyStore;
 import com.cobblemon.mod.common.battles.*;
-import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
-import com.cobblemon.mod.common.battles.ai.RandomBattleAI;
-import com.cobblemon.mod.common.battles.ai.StrongBattleAI;
-import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.*;
-import kotlin.Unit;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
@@ -41,29 +34,29 @@ public class PokemonUtils {
     public static boolean isPlayerInBattle(ServerPlayerEntity player) {
         return BattleRegistry.INSTANCE.getBattleByParticipatingPlayer(player) != null;
     }
-
+    
     public static PokemonEntity spawnWildPokemon(ServerPlayerEntity player) {
         if (!hasPokemonAvailable(player)) return null;
-
+        
         World world = player.getWorld();
         Vec3d pos = player.getPos();
         BlockPos blockPos = BlockPos.ofFloored(pos);
-
+        
         List<SpawnEntry> validSpawns = SpawnPoolManager.getValidSpawnsForPlayer(player);
-
+        
         if (validSpawns.isEmpty()) {
             Valdora.LOGGER.info("There are no spawns available for player " + player.getName() + " at " + player.getPos().x + " " + player.getPos().y + " " + player.getPos().z);
             return null;
         }
-
+        
         int totalWeight = validSpawns.stream().mapToInt(entry -> entry.spawn_weight).sum();
-
+        
         Random random = new Random();
         int randomWeight = random.nextInt(totalWeight);
-
+        
         int cumulativeWeight = 0;
         SpawnEntry selectedEntry = null;
-
+        
         for (SpawnEntry entry : validSpawns) {
             cumulativeWeight += entry.spawn_weight;
             if (randomWeight < cumulativeWeight) {
@@ -71,41 +64,41 @@ public class PokemonUtils {
                 break;
             }
         }
-
+        
         if (selectedEntry == null) {
             Valdora.LOGGER.info("SpawnWeight was out of bounds!");
             return null;
         }
-
+        
         String pokemonName = selectedEntry.pokemon;
         int minLevel = selectedEntry.min_level;
         int maxLevel = selectedEntry.max_level;
-
+        
         int level = random.nextInt(maxLevel - minLevel + 1) + minLevel;
-
+        
         PokemonEntity pokemonEntity = PokemonProperties.Companion.parse(pokemonName.toLowerCase() + " level=" + level).createEntity(world);
         pokemonEntity.getPokemon().setShiny(rollForShiny(player));
-
+        
         pokemonEntity.setPosition(blockPos.toCenterPos());
-
+        
         return pokemonEntity;
     }
-
+    
     public static void startWildBattle(ServerPlayerEntity player) {
         World world = player.getWorld();
-
+        
         if (!(world instanceof ServerWorld)) return;
-
+        
         PokemonEntity wildPokemonEntity = spawnWildPokemon(player);
         if (wildPokemonEntity == null) return;
-
+        
         world.spawnEntity(wildPokemonEntity);
-
+        
         TickScheduler.runNextTick(2, () -> {
             BattleBuilder.INSTANCE.pve(player, wildPokemonEntity);
         });
     }
-
+    
     public static boolean hasPokemon(ServerPlayerEntity player) {
         PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
         boolean hasPokemon = false;
@@ -118,7 +111,7 @@ public class PokemonUtils {
         }
         return hasPokemon;
     }
-
+    
     public static boolean hasPokemonAvailable(ServerPlayerEntity player) {
         PlayerPartyStore party = Cobblemon.INSTANCE.getStorage().getParty(player);
         boolean hasAvailablePkmn = false;
@@ -133,183 +126,52 @@ public class PokemonUtils {
         }
         return true;
     }
-
+    
     public static void startTrainerBattle(ServerPlayerEntity player, String trainerId, String trainerNpcUuid) {
         if (!hasPokemonAvailable(player)) {
             player.sendMessage(Text.literal("You need at least one Pokémon to battle!"), false);
             return;
         }
-
+        
         if (isPlayerInBattle(player)) {
             Valdora.LOGGER.info(player.getName().getString() + " is already in battle!");
             return;
         }
-
+        
         TrainerConfig trainer = TrainerManager.getTrainerById(trainerId);
-
+        
         DummyEntity dummy = new DummyEntity(ModEntities.DUMMY_ENTITY, player.getWorld());
         dummy.setPos(Math.floor(player.getX()) + 0.5, Math.floor(player.getY()) + 0.5, Math.floor(player.getZ()) + 0.5);
         player.getServerWorld().spawnEntity(dummy);
-
+        
         TickScheduler.runNextTick(1, () -> {
             try {
-                TrainerBattle trainerBattle = new AbstractTrainerBattle(
-                        new AbstractPlayerBattleParticipant(player, Cobblemon.INSTANCE.getStorage().getParty(player)),
-                        new AbstractTrainerBattleParticipant(trainer, player, dummy, trainerNpcUuid)
-                );
-
+                TrainerBattle trainerBattle = new AbstractTrainerBattle(new AbstractPlayerBattleParticipant(player, Cobblemon.INSTANCE.getStorage().getParty(player)),
+                        new AbstractTrainerBattleParticipant(trainer, player, dummy, trainerNpcUuid));
+                
                 trainerBattle.start();
             } catch (BattleStartException e) {
                 return;
             }
         });
-
-        /*
-
-        if (trainer == null) {
-            player.sendMessage(Text.literal("Invalid trainer id"));
-            return;
-        }
-
-        try {
-            final BattleFormat battleFormat = switch (trainer.battleFormat.toLowerCase()) {
-                case "singles" -> BattleFormat.Companion.getGEN_9_SINGLES();
-                case "doubles" -> BattleFormat.Companion.getGEN_9_DOUBLES();
-                case "triples" -> BattleFormat.Companion.getGEN_9_TRIPLES();
-                case "multi" -> BattleFormat.Companion.getGEN_9_MULTI();
-                case "royal" -> BattleFormat.Companion.getGEN_9_ROYAL();
-                default -> BattleFormat.Companion.getGEN_9_SINGLES();
-            };
-
-            List<BattlePokemon> trainerTeam = new ArrayList<>();
-
-            for (ConfigPokemon configPokemon : trainer.pokemonTeam) {
-                // Check conditional Pokémon
-                if (configPokemon instanceof ConditionalConfigPokemon conditional) {
-                    if (!conditional.isAllowedForPlayer(player)) {
-                        Valdora.LOGGER.info("Skipping conditional Pokémon " + conditional.species
-                                + " for trainer " + trainer.trainerId
-                                + " (missing flag " + conditional.requiredFlag + "=" + conditional.requiredValue + ")");
-                        continue;
-                    }
-                }
-
-                // Build Pokémon
-                Pokemon builtPkmn = configPokemon.build();
-                if (builtPkmn == null) {
-                    Valdora.LOGGER.error("Failed to build Pokémon for trainer " + trainer.trainerId);
-                    continue;
-                }
-
-                builtPkmn.setOriginalTrainer(trainer.trainerId);
-
-                // Prevent more than 6 Pokémon in the battle team
-                if (trainerTeam.size() >= 6) {
-                    Valdora.LOGGER.warn("Trainer " + trainer.trainerId
-                            + " has more than 6 valid Pokémon. Extra Pokémon (like "
-                            + builtPkmn.getSpecies().getName() + ") will be ignored.");
-                    break;
-                }
-
-                // Wrap into BattlePokemon
-                BattlePokemon battlePokemon = new BattlePokemon(
-                        builtPkmn,
-                        builtPkmn.clone(true, player.getServer().getRegistryManager()),
-                        pokemonEntity -> {
-                            pokemonEntity.discard();
-                            return Unit.INSTANCE;
-                        }
-                );
-
-                battlePokemon.getEffectedPokemon()
-                        .setCurrentHealth(battlePokemon.getEffectedPokemon().getMaxHealth());
-
-                trainerTeam.add(battlePokemon);
-            }
-
-            if (trainerTeam.isEmpty()) {
-                Valdora.LOGGER.error("Trainer " + trainer.trainerId + " has no usable Pokémon after filtering!");
-            }
-
-            if (trainerTeam.isEmpty()) {
-                Valdora.LOGGER.error("Trainer team is empty!");
-                player.sendMessage(Text.literal("Trainer has no Pokémon!"), false);
-                return;
-            }
-
-            BattleAI battleAI = null;
-            //if (trainer.aiLevel >= 0) battleAI = new StrongBattleAI(trainer.aiLevel);
-            //else battleAI = new RandomBattleAI();
-
-            LivingEntity dummy = new DummyEntity(ModEntities.DUMMY_ENTITY, player.getWorld());
-            dummy.setPos(player.getX(), player.getY(), player.getZ());
-            player.getServerWorld().spawnEntity(dummy);
-
-            PokemonTeamBattleActor trainerActor = new PokemonTeamBattleActor(trainer.trainerName, trainer.trainerId, trainerNpcUuid, UUID.randomUUID(), trainerTeam, battleAI, dummy, player);
-
-            trainerTeam.forEach(p -> p.setActor(trainerActor));
-
-            PlayerPartyStore playerParty = Cobblemon.INSTANCE.getStorage().getParty(player);
-            List<BattlePokemon> playerTeam = playerParty.toBattleTeam();
-
-            if (playerTeam.isEmpty()) {
-                Valdora.LOGGER.error("Player team is empty!");
-                return;
-            }
-
-            PlayerBattleActor playerActor = new PlayerBattleActor(player.getUuid(), playerTeam);
-
-            playerTeam.forEach(p -> p.setActor(playerActor));
-
-            TickScheduler.runNextTick(2, () -> {
-                playerParty.toGappyList().stream()
-                        .filter(Objects::nonNull)
-                        .forEach(Pokemon::recall);
-
-                BattleSide trainerSide = new BattleSide(trainerActor);
-                BattleSide playerSide = new BattleSide(playerActor);
-
-                try {
-                    trainerTeam.get(0).getEffectedPokemon().sendOut(player.getServerWorld(), player.getPos(), null, pokemonEntity -> { return Unit.INSTANCE; });
-                    playerTeam.get(0).getEffectedPokemon().sendOut(player.getServerWorld(), player.getPos(), null, pokemonEntity -> { return Unit.INSTANCE; });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                Cobblemon.INSTANCE.getBattleRegistry().startBattle(
-                        battleFormat,
-                        playerSide,
-                        trainerSide,
-                        false
-                ).ifSuccessful(e -> {
-                    TrainerManager.playerStartedBattle(player, trainer);
-                    return Unit.INSTANCE;
-                });
-            });
-        } catch (Exception e) {
-            Valdora.LOGGER.error("Error starting trainer battle: " + e.getMessage());
-            e.printStackTrace();
-            player.sendMessage(Text.literal("An error occurred while starting the battle."), false);
-        }
-         */
     }
-
+    
     public static boolean rollForShiny(ServerPlayerEntity player) {
         int roll = randomRoll(player);
         return roll == 0;
     }
-
+    
     private static int randomRoll(ServerPlayerEntity player) {
         World world = player.getWorld();
         BlockPos pos = player.getBlockPos();
-
+        
         RegistryEntry<Biome> biomeEntry = world.getBiome(pos);
         Biome biome = biomeEntry.value();
-
+        
         Identifier biomeId = world.getRegistryManager().get(RegistryKeys.BIOME).getId(biome);
-
+        
         int rollOdds = Valdora.BASE_SHINY_CHANCE;
-
+        
         if (ShinyHour.isActive()) {
             if (ShinyHour.getBiome().equalsIgnoreCase(biomeId.getPath())) {
                 rollOdds = (int) Math.floor(1.0 / Valdora.SHINY_TIME_MULTIPLIER * rollOdds);
@@ -318,7 +180,7 @@ public class PokemonUtils {
                 }
             }
         }
-
+        
         return new Random().nextInt(rollOdds + 1);
     }
 }

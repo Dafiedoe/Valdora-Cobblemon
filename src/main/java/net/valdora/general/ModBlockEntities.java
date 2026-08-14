@@ -10,12 +10,9 @@ import net.valdora.savedata.flaggedbarrier.FlaggedBarrierEntity;
 
 public class ModBlockEntities {
     public static BlockEntityType<FlaggedBarrierEntity> FLAGGED_BARRIER_ENTITY;
-
+    
     public static void register() {
-        FLAGGED_BARRIER_ENTITY = Registry.register(
-                Registries.BLOCK_ENTITY_TYPE,
-                Identifier.of(Valdora.MOD_ID, "flagged_barrier_entity"),
-                FabricBlockEntityTypeBuilder.create(FlaggedBarrierEntity::new, ModBlocks.FLAGGED_BARRIER).build()
-        );
+        FLAGGED_BARRIER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of(Valdora.MOD_ID, "flagged_barrier_entity"),
+                FabricBlockEntityTypeBuilder.create(FlaggedBarrierEntity::new, ModBlocks.FLAGGED_BARRIER).build());
     }
 }

@@ -17,12 +17,10 @@ import net.valdora.warps.WarpManager;
 
 public class ReloadModCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("valdora")
-                .then(CommandManager.literal("reload")
-                        .requires(source -> Permissions.check(source, "valdora.reload", 2))
-                        .executes(ReloadModCommand::execute)));
+        dispatcher.register(CommandManager.literal("valdora").then(CommandManager.literal("reload").requires(source -> Permissions.check(source, "valdora.reload", 2))
+                .executes(ReloadModCommand::execute)));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) {
         Valdora.loadConfig();
         SpawnPoolManager.load();
@@ -32,11 +30,11 @@ public class ReloadModCommand {
         ShopManager.load();
         WarpManager.load();
         AreaNotificationManager.load();
-
+        
         Valdora.reloadPlayerQuestHud();
-
+        
         context.getSource().sendMessage(Text.literal("Valdora has been reloaded!"));
-
+        
         return 1;
     }
 }

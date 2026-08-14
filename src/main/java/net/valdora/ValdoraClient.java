@@ -12,11 +12,14 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.entity.BoatEntityRenderer;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.entity.vehicle.BoatEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.valdora.areanotifications.ClientAreaNotificationHandler;
 import net.valdora.general.ModBlockEntities;
 import net.valdora.general.ModBlocks;
 import net.valdora.general.ModEntities;
+import net.valdora.pokephone.PokePhoneRespondProgressPayload;
+import net.valdora.pokephone.appscreens.ProfileAppScreen;
 import net.valdora.quests.hud.CompassHudClient;
 import net.valdora.quests.hud.CompassHudRenderer;
 import net.valdora.quests.hud.QuestHudClient;
@@ -37,24 +40,20 @@ import static net.valdora.general.ModEntities.SURF_BOARD;
 
 public class ValdoraClient implements ClientModInitializer {
     public static final EntityModelLayer DUMMY_LAYER = new EntityModelLayer(Identifier.of(Valdora.MOD_ID, "dummy"), "main");
-
+    
     @Override
     public void onInitializeClient() {
-        // Register surf board entity renderer
-        EntityRendererRegistry.register(
-                SURF_BOARD,
-                context -> new BoatEntityRenderer(context, false) {
+        EntityRendererRegistry.register(SURF_BOARD, context -> new BoatEntityRenderer(context, false) {
                     @Override
                     public Identifier getTexture(BoatEntity entity) {
                         return Identifier.of("minecraft", "textures/entity/boat/oak.png");
                     }
                 }
         );
-
-        // Register block rendering
+        
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLAGGED_BARRIER, RenderLayer.getTranslucent());
         BlockEntityRendererRegistry.register(ModBlockEntities.FLAGGED_BARRIER_ENTITY, FlaggedBarrierEntityRenderer::new);
-
+        
         ClientPlayNetworking.registerGlobalReceiver(PlayerSaveDataManager.OpenProfileGuiPayload.ID, (payload, context) -> {
             MinecraftClient client = context.client();
             client.execute(() -> {
@@ -65,8 +64,7 @@ public class ValdoraClient implements ClientModInitializer {
                 }
             });
         });
-
-        // Handle profile creation results
+        
         ClientPlayNetworking.registerGlobalReceiver(PlayerSaveDataManager.ProfileCreationResultPayload.ID, (payload, context) -> {
             MinecraftClient client = context.client();
             client.execute(() -> {
@@ -74,24 +72,20 @@ public class ValdoraClient implements ClientModInitializer {
                     if (!payload.success()) {
                         screen.setErrorMessage(payload.errorMessage());
                     } else {
-                        client.setScreen(screen.parent); // Return to parent screen on success
+                        client.setScreen(screen.parent);
                     }
                 }
             });
         });
-
-        // register a PlayPayloadHandler that receives a decoded PlayerFlagsS2CPayload
-        ClientPlayNetworking.registerGlobalReceiver(
-                PlayerFlagsS2CPayload.PAYLOAD_ID,
-                (PlayerFlagsS2CPayload payload, ClientPlayNetworking.Context ctx) -> {
+        
+        ClientPlayNetworking.registerGlobalReceiver(PlayerFlagsS2CPayload.PAYLOAD_ID, (PlayerFlagsS2CPayload payload, ClientPlayNetworking.Context ctx) -> {
                     MinecraftClient client = ctx.client();
                     ClientPlayerFlagCache.setFlags(client.player.getUuid(), payload.flags());
                 }
         );
-
+        
         ClientPlayNetworking.registerGlobalReceiver(OpenShopS2CPayload.ID, (payload, context) -> {
             MinecraftClient client = context.client();
-            // switch to the render thread & open the screen
             client.execute(() -> {
                 ConfigShop shop = payload.toConfigShop();
                 ShopScreen screen = new ShopScreen(shop);
@@ -99,12 +93,22 @@ public class ValdoraClient implements ClientModInitializer {
                 client.setScreen(screen);
             });
         });
-
+        
+        ClientPlayNetworking.registerGlobalReceiver(PokePhoneRespondProgressPayload.ID, (payload, context) -> {
+            int badgeCount = payload.badgeCount();
+            int pokedollars = payload.pokedollars();
+            context.client().execute(() -> {
+                if (context.client().currentScreen instanceof ProfileAppScreen profileScreen) {
+                    MinecraftClient.getInstance().setScreen(new ProfileAppScreen(Text.literal("Your Profile"), badgeCount, pokedollars));
+                }
+            });
+        });
+        
         EntityRendererRegistry.register(ModEntities.DUMMY_ENTITY, DummyRenderer::new);
         EntityModelLayerRegistry.registerModelLayer(DUMMY_LAYER, DummyModel::getTexturedModelData);
-
+        
         ClientAreaNotificationHandler.register();
-
+        
         QuestHudClient.register();
         HudRenderCallback.EVENT.register(new QuestHudRenderer());
         CompassHudClient.register();

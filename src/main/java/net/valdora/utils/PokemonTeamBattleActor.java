@@ -25,7 +25,7 @@ public class PokemonTeamBattleActor extends AIBattleActor implements EntityBacke
     private final LivingEntity entity;
     private final ServerWorld world;
     private final Vec3d pos;
-
+    
     public PokemonTeamBattleActor(String name, String id, String npcUuid, @NotNull UUID uuid, @NotNull List<BattlePokemon> pokemonList, @NotNull BattleAI battleAI, LivingEntity entity) {
         super(uuid, pokemonList, battleAI);
         this.name = name;
@@ -35,50 +35,50 @@ public class PokemonTeamBattleActor extends AIBattleActor implements EntityBacke
         this.world = (ServerWorld) entity.getWorld();
         this.pos = entity.getPos();
     }
-
+    
     @Override
     public LivingEntity getEntity() {
         return this.entity;
     }
-
+    
     @NotNull
     @Override
     public ActorType getType() {
         return ActorType.NPC;
     }
-
+    
     @NotNull
     @Override
     public MutableText getName() {
         return Text.literal(this.name);
     }
-
+    
     @NotNull
     @Override
     public MutableText nameOwned(@NotNull String pokemonName) {
         return Text.literal(this.name + "'s " + pokemonName);
     }
-
+    
     public String getId() {
         return id;
     }
-
+    
     public String getNpcUuid() {
         return npcUuid;
     }
-
+    
     @Nullable
     @Override
     public Pair<ServerWorld, Vec3d> getWorldAndPosition() {
         return new Pair<>(world, pos);
     }
-
+    
     @Nullable
     @Override
     public Vec3d getInitialPos() {
         return entity.getPos();
     }
-
+    
     @Override
     public float getFleeDistance() {
         return 0;

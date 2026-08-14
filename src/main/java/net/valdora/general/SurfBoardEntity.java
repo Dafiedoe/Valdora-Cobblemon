@@ -11,7 +11,7 @@ public class SurfBoardEntity extends BoatEntity {
     public SurfBoardEntity(EntityType<? extends BoatEntity> entityType, World world) {
         super(entityType, world);
     }
-
+    
     public SurfBoardEntity(World world, double x, double y, double z) {
         this(ModEntities.SURF_BOARD, world);
         this.setPosition(x, y, z);
@@ -20,7 +20,7 @@ public class SurfBoardEntity extends BoatEntity {
         this.prevY = y;
         this.prevZ = z;
     }
-
+    
     @Override
     public void tick() {
         super.tick();

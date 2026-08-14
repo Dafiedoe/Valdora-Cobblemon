@@ -23,56 +23,50 @@ public class EntityBackedTrainerBattleActor extends AIBattleActor implements Ent
     private final LivingEntity entity;
     private final ServerWorld world;
     private final Vec3d pos;
-
-    public EntityBackedTrainerBattleActor(
-            String name,
-            UUID uuid,
-            List<BattlePokemon> pokemon,
-            BattleAI battleAI,
-            LivingEntity entity
-    ) {
+    
+    public EntityBackedTrainerBattleActor(String name, UUID uuid, List<BattlePokemon> pokemon, BattleAI battleAI, LivingEntity entity) {
         super(uuid, pokemon, battleAI);
         this.name = name;
         this.entity = entity;
         this.world = (ServerWorld) entity.getWorld();
         this.pos = entity.getPos();
     }
-
+    
     @Override
     public LivingEntity getEntity() {
         return this.entity;
     }
-
+    
     @NotNull
     @Override
     public ActorType getType() {
         return ActorType.NPC;
     }
-
+    
     @NotNull
     @Override
     public MutableText getName() {
         return Text.literal(this.name);
     }
-
+    
     @NotNull
     @Override
     public MutableText nameOwned(@NotNull String s) {
         return Text.literal(s).append(getName());
     }
-
+    
     @Nullable
     @Override
     public Pair<ServerWorld, Vec3d> getWorldAndPosition() {
         return new Pair<>(world, pos);
     }
-
+    
     @Nullable
     @Override
     public Vec3d getInitialPos() {
         return entity.getPos();
     }
-
+    
     @Override
     public float getFleeDistance() {
         return 0;

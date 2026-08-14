@@ -17,7 +17,7 @@ public class QuestStartCommand {
         QuestManager.getAllQuests().keySet().forEach(builder::suggest);
         return builder.buildFuture();
     };
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("valdora")
                 .then(CommandManager.literal("startquest")
@@ -27,7 +27,7 @@ public class QuestStartCommand {
                                         .suggests(QUEST_SUGGESTIONS)
                                         .executes(QuestStartCommand::execute)))));
     }
-
+    
     private static int execute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         String questId = StringArgumentType.getString(context, "questId");

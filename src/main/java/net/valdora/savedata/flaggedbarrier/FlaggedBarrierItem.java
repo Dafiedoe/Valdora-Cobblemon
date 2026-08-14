@@ -10,7 +10,7 @@ public class FlaggedBarrierItem extends BlockItem {
     public FlaggedBarrierItem(Block block, Settings settings) {
         super(block, settings);
     }
-
+    
     @Override
     public Text getName(ItemStack stack) {
         String flag = stack.getOrDefault(ModComponents.FLAG_NAME, "");

@@ -15,11 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * BiomeChanger working in chunk coordinates with robust splitting to respect the /fillbiome volume limit.
- *
- * Fix: start the spiral facing east (dx=1,dz=0) so the west neighbor isn't skipped.
- */
 public class BiomeChanger {
     private static ServerPlayerEntity player = null;
     private static String biomeId = null;
@@ -31,26 +26,29 @@ public class BiomeChanger {
     private static int x = 0;
     private static int z = 0;
     
-    // player's chunk at Setup time — we will always start the spiral here
     private static int originChunkX = 0;
     private static int originChunkZ = 0;
     
     private static int chunkSize = 1;
     
-    private enum Alignment { FLOOR, NEAREST, CENTER }
+    private enum Alignment {FLOOR, NEAREST, CENTER}
+    
     private static Alignment alignment = Alignment.CENTER;
     
     private static final long MAX_VOLUME = 32768L;
     
-    // --- server safety throttles ---
-    private static final int COMMAND_DELAY_TICKS = 3;   // delay between fillbiome commands
-    private static final int REGION_COOLDOWN_TICKS = 40; // wait after a region finishes
-    private static final int MAX_ACTIVE_REGIONS = 1;     // DO NOT increase unless you know what you're doing
+    private static final int COMMAND_DELAY_TICKS = 3;
+    private static final int REGION_COOLDOWN_TICKS = 40;
+    private static final int MAX_ACTIVE_REGIONS = 1;
     
     private static class Region {
         final int sx, ex, sz, ez;
+        
         Region(int sx, int ex, int sz, int ez) {
-            this.sx = sx; this.ex = ex; this.sz = sz; this.ez = ez;
+            this.sx = sx;
+            this.ex = ex;
+            this.sz = sz;
+            this.ez = ez;
         }
     }
     
@@ -72,22 +70,16 @@ public class BiomeChanger {
     
     public static void Start(ServerPlayerEntity commandSource) {
         if (player == null || biomeId == null) {
-            commandSource.sendMessage(
-                    Text.literal("Setup has not yet been run. Use '/valdora biomechanger setup <biome> <chunkSize>' first!")
-                            .formatted(Formatting.RED)
-            );
+            commandSource.sendMessage(Text.literal("Setup has not yet been run. Use '/valdora biomechanger setup <biome> <chunkSize>' first!").formatted(Formatting.RED));
             return;
         }
         
         if (running.get()) {
-            commandSource.sendMessage(
-                    Text.literal("Stopping previous biome-changer run and starting a new one...")
-                            .formatted(Formatting.YELLOW)
-            );
+            commandSource.sendMessage(Text.literal("Stopping previous biome-changer run and starting a new one...").formatted(Formatting.YELLOW));
             Stop();
             int attempts = 0;
             while (changerThread != null && attempts++ < 10) {
-                try { Thread.sleep(25); } catch (InterruptedException ignored) {}
+                try { Thread.sleep(25); } catch (InterruptedException ignored) { }
             }
         }
         
@@ -95,39 +87,35 @@ public class BiomeChanger {
         paused.set(false);
         
         changerThread = new Thread(() -> {
-            // **Start facing EAST** so spiral visits west neighbor properly.
             int dx = 1;
             int dz = 0;
             int segmentLength = 1;
             int radiusCounter = 0;
             
-            // Use the stored origin chunk from Setup — always start the spiral at the player's chunk.
             final int playerChunkX = originChunkX;
             final int playerChunkZ = originChunkZ;
             
-            // Start at the player's chunk to ensure center is processed.
             final int startChunkX = playerChunkX;
             final int startChunkZ = playerChunkZ;
             
             int currentChunkX = startChunkX;
             int currentChunkZ = startChunkZ;
             
-            fillBiomeChunkAt(currentChunkX, currentChunkZ, /*debugFirst=*/true);
+            fillBiomeChunkAt(currentChunkX, currentChunkZ, true);
             
             while (running.get()) {
                 while (paused.get()) {
                     try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
                 }
                 
-                // Wait until current region finishes before advancing spiral
                 while (regionInProgress.get() && running.get()) {
-                    try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+                    try { Thread.sleep(50); } catch (InterruptedException ignored) { }
                 }
                 
                 currentChunkX += dx;
                 currentChunkZ += dz;
                 
-                fillBiomeChunkAt(currentChunkX, currentChunkZ, /*debugFirst=*/false);
+                fillBiomeChunkAt(currentChunkX, currentChunkZ, false);
                 
                 radiusCounter++;
                 if (radiusCounter == segmentLength) {
@@ -139,8 +127,8 @@ public class BiomeChanger {
                 }
                 
                 try {
-                    Thread.sleep(300); // 5 chunks per second max
-                } catch (InterruptedException ignored) {}
+                    Thread.sleep(300);
+                } catch (InterruptedException ignored) { }
             }
         }, "Valdora-BiomeChanger");
         
@@ -157,10 +145,10 @@ public class BiomeChanger {
     }
     
     public static void Pause() { paused.set(true); }
+    
     public static void Resume() { paused.set(false); }
     
     private static void fillBiomeChunkAt(int chunkX, int chunkZ, boolean debugFirst) {
-        // Ensure only one active region at a time
         if (!regionInProgress.compareAndSet(false, true)) {
             return;
         }
@@ -181,7 +169,6 @@ public class BiomeChanger {
             final int minChunkZ = chunkZ;
             final int maxChunkZ = chunkZ + chunkSize - 1;
             
-            // Force and synchronously request chunks
             for (int cx = minChunkX; cx <= maxChunkX; cx++) {
                 for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                     try {
@@ -197,42 +184,30 @@ public class BiomeChanger {
             int yEnd = serverWorld.getTopY() - 1;
             final int ySize = yEnd - yStart + 1;
             
-            // initial 4-way partition
             List<Region> parts = splitIntoFour(blockStartX, blockEndX, blockStartZ, blockEndZ);
             
             if (debugFirst) {
                 BlockPos playerPos = player.getBlockPos();
-                String debug = String.format("playerBlock=(%d,%d) chunkStart=(%d,%d) chunkSize=%d -> blockRangeX=[%d..%d] blockRangeZ=[%d..%d] initialParts=%d",
-                        playerPos.getX(), playerPos.getZ(),
-                        chunkX, chunkZ,
-                        chunkSize,
-                        blockStartX, blockEndX,
-                        blockStartZ, blockEndZ,
-                        parts.size());
+                String debug = String.format("playerBlock=(%d,%d) chunkStart=(%d,%d) chunkSize=%d -> blockRangeX=[%d..%d] blockRangeZ=[%d..%d] initialParts=%d", playerPos.getX(), playerPos.getZ(), chunkX, chunkZ,
+                        chunkSize, blockStartX, blockEndX, blockStartZ, blockEndZ, parts.size());
                 player.sendMessage(Text.literal(debug).formatted(Formatting.GRAY), false);
             }
             
-            // Build a list of concrete fill commands (handles horizontal recursion and vertical slicing)
             List<String> fillCommands = new ArrayList<>();
             
-            // Worklist for horizontal splitting when footprint alone exceeds MAX_VOLUME
             List<Region> work = new ArrayList<>(parts);
             while (!work.isEmpty()) {
                 Region r = work.remove(0);
                 
-                // skip degenerate regions
                 if (r.sx > r.ex || r.sz > r.ez) continue;
                 
                 long xLen = (long) r.ex - r.sx + 1L;
                 long zLen = (long) r.ez - r.sz + 1L;
                 
-                // if even a 1-high slice is too big horizontally, split horizontally
                 if (xLen * zLen > MAX_VOLUME) {
-                    // split along longer horizontal axis
                     if (xLen >= zLen) {
                         int midX = Math.floorDiv(r.sx + r.ex, 2);
                         if (midX < r.sx || midX >= r.ex) {
-                            // fallback: treat as-is (shouldn't normally happen)
                             work.add(r);
                         } else {
                             work.add(0, new Region(midX + 1, r.ex, r.sz, r.ez));
@@ -250,11 +225,8 @@ public class BiomeChanger {
                     continue;
                 }
                 
-                // horizontal footprint is small enough; compute vertical slices
                 long footprint = xLen * zLen;
-                // sliceHeight such that footprint * sliceHeight <= MAX_VOLUME
                 int sliceHeight = (int) Math.max(1L, MAX_VOLUME / footprint);
-                // how many full slices needed to cover ySize
                 int slices = (int) ((ySize + sliceHeight - 1) / sliceHeight);
                 
                 for (int s = 0; s < slices; s++) {
@@ -266,18 +238,13 @@ public class BiomeChanger {
                     int ex4 = Math.floorDiv(r.ex, 4) * 4 + 3;
                     int ez4 = Math.floorDiv(r.ez, 4) * 4 + 3;
                     
-                    String cmd = String.format("/fillbiome %d %d %d %d %d %d %s",
-                            sx4, sliceYStart, sz4,
-                            ex4, sliceYEnd, ez4,
-                            biomeId);
+                    String cmd = String.format("/fillbiome %d %d %d %d %d %d %s", sx4, sliceYStart, sz4, ex4, sliceYEnd, ez4, biomeId);
                     fillCommands.add(cmd);
                 }
             }
             
-            // --- WAIT until chunks are *observably* loaded, then run fill commands ---
-            final int MAX_WAIT_TICKS = 40; // how many ticks to wait (adjustable)
+            final int MAX_WAIT_TICKS = 40;
             
-            // Supplier to check whether all affected chunks are reported loaded
             java.util.function.Supplier<Boolean> allLoaded = () -> {
                 for (int cx = minChunkX; cx <= maxChunkX; cx++) {
                     for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
@@ -291,29 +258,22 @@ public class BiomeChanger {
                 return true;
             };
             
-            // Waiter that polls each tick up to MAX_WAIT_TICKS then runs fills
             class Waiter {
                 int remaining;
+                
                 Waiter(int remaining) { this.remaining = remaining; }
                 
                 void tick() {
                     try {
                         if (allLoaded.get()) {
-                            // schedule fills staggered by 1 tick each (give small settle delay)
                             int baseDelay = 1;
                             for (int i = 0; i < fillCommands.size(); i++) {
                                 final String cmd = fillCommands.get(i);
                                 final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
-                                TickScheduler.runNextTick(delay, () -> {
-                                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
-                                });
+                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd););
                             }
                             
-                            // unforce after all parts done, with a small safety delay
-                            int unforceDelay =
-                                    baseDelay
-                                            + (fillCommands.size() * COMMAND_DELAY_TICKS)
-                                            + REGION_COOLDOWN_TICKS;
+                            int unforceDelay = baseDelay + (fillCommands.size() * COMMAND_DELAY_TICKS) + REGION_COOLDOWN_TICKS;
                             TickScheduler.runNextTick(unforceDelay, () -> {
                                 for (int cx = minChunkX; cx <= maxChunkX; cx++) {
                                     for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
@@ -326,23 +286,16 @@ public class BiomeChanger {
                         }
                         
                         if (remaining <= 0) {
-                            // timed out — log and proceed anyway
-                            Valdora.LOGGER.warn("Timed out waiting for chunks [{},{}]-[{},{}] to report loaded; proceeding with fillbiome anyway.",
-                                    minChunkX, minChunkZ, maxChunkX, maxChunkZ);
+                            Valdora.LOGGER.warn("Timed out waiting for chunks [{},{}]-[{},{}] to report loaded; proceeding with fillbiome anyway.", minChunkX, minChunkZ, maxChunkX, maxChunkZ);
                             
                             int baseDelay = 1;
                             for (int i = 0; i < fillCommands.size(); i++) {
                                 final String cmd = fillCommands.get(i);
                                 final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
-                                TickScheduler.runNextTick(delay, () -> {
-                                    server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
-                                });
+                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd););
                             }
                             
-                            int unforceDelay =
-                                    baseDelay
-                                            + (fillCommands.size() * COMMAND_DELAY_TICKS)
-                                            + REGION_COOLDOWN_TICKS;
+                            int unforceDelay = baseDelay + (fillCommands.size() * COMMAND_DELAY_TICKS) + REGION_COOLDOWN_TICKS;
                             
                             TickScheduler.runNextTick(unforceDelay, () -> {
                                 for (int cx = minChunkX; cx <= maxChunkX; cx++) {
@@ -356,40 +309,31 @@ public class BiomeChanger {
                         }
                         
                         remaining--;
-                        // try again next tick
                         TickScheduler.runNextTick(1, this::tick);
                     } catch (Exception e) {
-                        // should not happen, but ensure we unforce chunks if something unexpected occurs
                         Valdora.LOGGER.warn("Exception while waiting for chunks to load: {}", e.toString());
                         for (int cx = minChunkX; cx <= maxChunkX; cx++) {
                             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
-                                try { serverWorld.setChunkForced(cx, cz, false); } catch (Exception ignored) {}
+                                try { serverWorld.setChunkForced(cx, cz, false); } catch (Exception ignored) { }
                             }
                         }
                     }
                 }
             }
             
-            // start waiting
             new Waiter(MAX_WAIT_TICKS).tick();
-            // --- end waiter ---
         });
-        
     }
     
-    /**
-     * split rectangle into four quadrants (may include degenerate quadrants)
-     * Use Math.floorDiv for midpoint so negatives behave correctly.
-     */
     private static List<Region> splitIntoFour(int sx, int ex, int sz, int ez) {
         List<Region> out = new ArrayList<>(4);
         int midX = Math.floorDiv(sx + ex, 2);
         int midZ = Math.floorDiv(sz + ez, 2);
         
-        out.add(new Region(sx,      midX, sz,      midZ));      // NW
-        out.add(new Region(midX+1,  ex,   sz,      midZ));      // NE
-        out.add(new Region(sx,      midX, midZ+1,  ez));       // SW
-        out.add(new Region(midX+1,  ex,   midZ+1,  ez));       // SE
+        out.add(new Region(sx, midX, sz, midZ));
+        out.add(new Region(midX + 1, ex, sz, midZ));
+        out.add(new Region(sx, midX, midZ + 1, ez));
+        out.add(new Region(midX + 1, ex, midZ + 1, ez));
         
         return out;
     }
