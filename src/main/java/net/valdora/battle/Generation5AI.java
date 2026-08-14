@@ -1,6 +1,7 @@
 package net.valdora.battle;
 
 import com.cobblemon.mod.common.api.abilities.Ability;
+import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
 import com.cobblemon.mod.common.api.battles.model.ai.BattleAI;
 import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.Moves;
@@ -78,7 +79,7 @@ public class Generation5AI implements BattleAI {
         boolean isAttackerBurned = false;
         PersistentStatusContainer statusContainer = attacker.getEffectedPokemon().getStatus();
         if (statusContainer != null && !statusContainer.isExpired()) {
-            isAttackerBurned = statusContainer.getStatus().equals(Statuses.INSTANCE.getBURN());
+            isAttackerBurned = statusContainer.getStatus().equals(Statuses.BURN);
         }
         return damage(attacker.getOriginalPokemon().getLevel(), attacker.getOriginalPokemon().getStat(isPhysicalMove ? Stats.ATTACK : Stats.SPECIAL_ATTACK),
                 defender.getOriginalPokemon().getStat(isPhysicalMove ? Stats.DEFENCE : Stats.SPECIAL_DEFENCE), move.getPower(), move.getType(), attacker.getOriginalPokemon().getPrimaryType(),
@@ -92,7 +93,7 @@ public class Generation5AI implements BattleAI {
     
     @NotNull
     @Override
-    public ShowdownActionResponse choose(@NotNull ActiveBattlePokemon activeBattlePokemon, @Nullable ShowdownMoveset showdownMoveset, boolean mustSwitch) {
+    public ShowdownActionResponse choose(@NotNull ActiveBattlePokemon activeBattlePokemon, @NotNull PokemonBattle battle, @NotNull BattleSide battleSide, @Nullable ShowdownMoveset showdownMoveset, boolean mustSwitch) {
         Optional<ActiveBattlePokemon> opponentActiveBattlePokemon = StreamSupport.stream(activeBattlePokemon.getAllActivePokemon().spliterator(), false).filter(abp -> !abp.isAllied(activeBattlePokemon)).findFirst();
         
         if (mustSwitch || activeBattlePokemon.isGone()) {

@@ -168,6 +168,7 @@ public class PlayerSaveDataManager {
                             if (!element.isJsonNull() && element.isJsonObject()) {
                                 Pokemon pokemon = new Pokemon();
                                 pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
+                                /*
                                 pokemon.setIV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
                                 pokemon.setIV(Stats.SPEED, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
                                 pokemon.setIV(Stats.DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
@@ -181,6 +182,7 @@ public class PlayerSaveDataManager {
                                 pokemon.setEV(Stats.ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
                                 pokemon.setEV(Stats.HP, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
                                 pokemon.setEV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
+                                 */
                                 party.set(slot, pokemon);
                             }
                         }
@@ -203,6 +205,7 @@ public class PlayerSaveDataManager {
                                     Pokemon pokemon = new Pokemon();
                                     pokemon.loadFromJSON(player.getRegistryManager(), element.getAsJsonObject());
                                     
+                                    /*
                                     pokemon.setIV(Stats.SPECIAL_ATTACK, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:special_attack").getAsInt());
                                     pokemon.setIV(Stats.SPEED, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:speed").getAsInt());
                                     pokemon.setIV(Stats.DEFENCE, element.getAsJsonObject().get("IVs").getAsJsonObject().get("cobblemon:defence").getAsInt());
@@ -216,6 +219,7 @@ public class PlayerSaveDataManager {
                                     pokemon.setEV(Stats.ATTACK, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:attack").getAsInt());
                                     pokemon.setEV(Stats.HP, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:hp").getAsInt());
                                     pokemon.setEV(Stats.SPECIAL_DEFENCE, element.getAsJsonObject().get("EVs").getAsJsonObject().get("cobblemon:special_defence").getAsInt());
+                                     */
                                     
                                     pc.set(new PCPosition(boxNum, slot), pokemon);
                                 }

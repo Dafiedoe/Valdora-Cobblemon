@@ -270,7 +270,7 @@ public class BiomeChanger {
                             for (int i = 0; i < fillCommands.size(); i++) {
                                 final String cmd = fillCommands.get(i);
                                 final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
-                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd););
+                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd));
                             }
                             
                             int unforceDelay = baseDelay + (fillCommands.size() * COMMAND_DELAY_TICKS) + REGION_COOLDOWN_TICKS;
@@ -292,7 +292,7 @@ public class BiomeChanger {
                             for (int i = 0; i < fillCommands.size(); i++) {
                                 final String cmd = fillCommands.get(i);
                                 final int delay = baseDelay + (i * COMMAND_DELAY_TICKS);
-                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd););
+                                TickScheduler.runNextTick(delay, () -> server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd));
                             }
                             
                             int unforceDelay = baseDelay + (fillCommands.size() * COMMAND_DELAY_TICKS) + REGION_COOLDOWN_TICKS;
